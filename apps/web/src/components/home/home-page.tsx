@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { ArrowRight, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target } from "lucide-react"
 import { BrandMark } from "@/components/landing/brand-mark"
 import { Button } from "@/components/ui/button"
@@ -13,12 +13,32 @@ const previousSessions = [
 
 export function HomePage() {
   const navigate = useNavigate()
+  const accountRef = useRef<HTMLDivElement>(null)
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
   const [accountOpen, setAccountOpen] = useState(false)
   const [reviewId, setReviewId] = useState<number | null>(null)
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
+
+  useEffect(() => {
+    if (!accountOpen) return
+
+    function closeOnOutsideClick(event: PointerEvent) {
+      if (!accountRef.current?.contains(event.target as Node)) setAccountOpen(false)
+    }
+
+    function closeOnEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") setAccountOpen(false)
+    }
+
+    document.addEventListener("pointerdown", closeOnOutsideClick)
+    document.addEventListener("keydown", closeOnEscape)
+    return () => {
+      document.removeEventListener("pointerdown", closeOnOutsideClick)
+      document.removeEventListener("keydown", closeOnEscape)
+    }
+  }, [accountOpen])
 
   return (
     <main className="home-shell">
@@ -27,9 +47,9 @@ export function HomePage() {
           <BrandMark href="/home" />
           <div className="home-account-actions">
             <div className="home-streak" aria-label="14 exercise streak"><Flame aria-hidden="true" /><strong>14</strong></div>
-            <div className="home-account">
-              <button className="home-user" type="button" aria-label="Open account menu" aria-expanded={accountOpen} onClick={() => setAccountOpen((value) => !value)}>TB</button>
-              {accountOpen && <div className="account-menu"><strong>Thomas Bustos</strong><span>demo@napkin.academy</span><button type="button" onClick={() => navigate("/login")}>Log out</button></div>}
+            <div className="home-account" ref={accountRef}>
+              <button className="home-user" type="button" aria-label="Open account menu" aria-expanded={accountOpen} aria-controls="account-menu" onClick={() => setAccountOpen((value) => !value)}>TB</button>
+              {accountOpen && <div className="account-menu" id="account-menu"><strong>Thomas Bustos</strong><span>demo@napkin.academy</span><button type="button" onClick={() => navigate("/login")}>Log out</button></div>}
             </div>
           </div>
         </div>

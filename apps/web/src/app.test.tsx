@@ -80,4 +80,26 @@ describe("Napkin V1 flow", () => {
     expect(screen.getByText("Mental technique")).toBeTruthy()
     expect(screen.queryByRole("button", { name: /retake/i })).toBeNull()
   })
+
+  it("closes the account menu after clicking outside", async () => {
+    const user = userEvent.setup()
+    renderRoute("/home")
+
+    await user.click(screen.getByRole("button", { name: "Open account menu" }))
+    expect(screen.getByRole("button", { name: "Log out" })).toBeTruthy()
+
+    await user.click(screen.getByRole("heading", { name: "Ready to train?" }))
+    expect(screen.queryByRole("button", { name: "Log out" })).toBeNull()
+  })
+
+  it("closes the account menu with Escape", async () => {
+    const user = userEvent.setup()
+    renderRoute("/home")
+
+    await user.click(screen.getByRole("button", { name: "Open account menu" }))
+    await user.keyboard("{Escape}")
+
+    expect(screen.queryByRole("button", { name: "Log out" })).toBeNull()
+    expect(screen.getByRole("button", { name: "Open account menu" }).getAttribute("aria-expanded")).toBe("false")
+  })
 })
