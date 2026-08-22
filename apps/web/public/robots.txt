@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /login
+Disallow: /home
+Disallow: /practice
+
+Sitemap: https://napkin.academy/sitemap.xml
