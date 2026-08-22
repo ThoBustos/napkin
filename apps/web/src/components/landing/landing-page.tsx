@@ -3,9 +3,18 @@ import { BrandMark } from "./brand-mark"
 import { ProductPreview } from "./product-preview"
 import { Button } from "@/components/ui/button"
 
+type FontVariant = "geist" | "manrope" | "instrument" | "exercise"
+
+function getFontVariant(): FontVariant {
+  const value = new URLSearchParams(window.location.search).get("font")
+  return value === "manrope" || value === "instrument" || value === "exercise" ? value : "geist"
+}
+
 export function LandingPage() {
+  const fontVariant = getFontVariant()
+
   return (
-    <main id="top" className="landing-shell">
+    <main id="top" className={`landing-shell font-${fontVariant}`}>
       <header className="site-header">
         <BrandMark />
         <nav aria-label="Primary navigation">
@@ -35,4 +44,3 @@ export function LandingPage() {
     </main>
   )
 }
-

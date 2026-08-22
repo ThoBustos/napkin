@@ -28,6 +28,15 @@
 - Typography: bounded responsive display sizes, business question, body, UI label and tabular number styles. Avoid viewport-only text sizing so content remains usable when zoomed.
 - Surface: paper panel with hairline border and optional restrained shadow.
 
+## Typography candidates
+
+- `?font=geist` — Geist + Newsreader; clean and closest to the selected hero.
+- `?font=manrope` — Manrope + Source Serif 4; warmer and approachable.
+- `?font=instrument` — Instrument Sans + Lora; sharp and editorial.
+- `?font=exercise` — DM Sans + Newsreader; preserved from the exercise-view system.
+
+Fonts are self-hosted through pinned Fontsource packages. The final selection should replace these temporary variants.
+
 ## Product components
 
 - `SiteHeader`: public navigation and entry action.
