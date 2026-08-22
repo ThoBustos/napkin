@@ -10,11 +10,15 @@ const questions = [
 
 type Result = "idle" | "correct" | "incorrect" | "complete"
 
-export function ProductPreview() {
+interface ProductPreviewProps {
+  initialSeconds?: number
+}
+
+export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewProps) {
   const [questionIndex, setQuestionIndex] = useState(0)
   const [answer, setAnswer] = useState("")
   const [result, setResult] = useState<Result>("idle")
-  const [seconds, setSeconds] = useState(6 * 60 + 28)
+  const [seconds, setSeconds] = useState(initialSeconds)
   const inputRef = useRef<HTMLInputElement>(null)
   const question = questions[questionIndex]
   const solved = result === "complete" ? questions.length : questionIndex
@@ -45,7 +49,7 @@ export function ProductPreview() {
     setQuestionIndex(0)
     setAnswer("")
     setResult("idle")
-    setSeconds(6 * 60 + 28)
+    setSeconds(initialSeconds)
     window.setTimeout(() => inputRef.current?.focus(), 0)
   }
 
