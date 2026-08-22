@@ -5,7 +5,7 @@
 - Question and requested output dominate active training.
 - Use warm cream for the application ground and white for working surfaces.
 - Navy carries content; cobalt indicates action or instruction; orange is reserved for time and streak signals.
-- Prefer thin borders, 2–6px radii and restrained shadows.
+- Prefer thin borders, 7px control radii, 16px large-surface radii and restrained shadows.
 - Use serif type for business questions and sans/mono type for interface and numbers.
 - Every interactive element has visible keyboard focus and a 44px minimum touch target.
 
@@ -25,7 +25,7 @@
 
 - `Button`: default, outline and ghost variants; three sizes.
 - `BrandMark`: square N mark and wordmark.
-- Typography: display, business question, body, UI label and tabular number styles.
+- Typography: bounded responsive display sizes, business question, body, UI label and tabular number styles. Avoid viewport-only text sizing so content remains usable when zoomed.
 - Surface: paper panel with hairline border and optional restrained shadow.
 
 ## Product components
@@ -41,4 +41,3 @@
 - `SessionSummary`: solved, correct and accuracy.
 
 Only `Button`, `BrandMark`, `SiteHeader` and the landing-page product preview are implemented in the first landing slice. New primitives should follow shadcn/ui conventions and live under `components/ui`; product-specific compositions live outside that directory.
-

@@ -9,8 +9,8 @@ export function ProductPreview() {
         <h2>Revenue &amp; growth</h2>
         <div className="progress-track"><span /></div>
         <div className="preview-stats">
-          <div><strong>08</strong><span>Question</span></div>
-          <div><strong>12</strong><span>Solved</span></div>
+          <div><strong>8</strong><span>Question</span></div>
+          <div><strong>12</strong><span>Points</span></div>
         </div>
         <div className="preview-streak"><Flame aria-hidden="true" /><span><small>Streak</small><strong>5 in a row</strong></span></div>
       </aside>
@@ -31,4 +31,3 @@ export function ProductPreview() {
     </section>
   )
 }
-
