@@ -3,6 +3,24 @@ import { HomePage } from "@/components/home/home-page"
 import { LandingPage } from "@/components/landing/landing-page"
 import { PracticePage } from "@/components/practice/practice-page"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { useEffect } from "react"
+
+function NotFoundPage() {
+  useEffect(() => {
+    const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
+    robots?.setAttribute("content", "noindex, nofollow")
+    document.title = "Page not found — Napkin"
+  }, [])
+
+  return (
+    <main className="not-found">
+      <span>404</span>
+      <h1>This calculation doesn’t add up.</h1>
+      <p>The page you’re looking for does not exist.</p>
+      <a href="/">Return to Napkin</a>
+    </main>
+  )
+}
 
 export function AppRoutes() {
   return (
@@ -11,7 +29,7 @@ export function AppRoutes() {
       <Route path="/login" element={<LoginPage />} />
       <Route path="/home" element={<HomePage />} />
       <Route path="/practice" element={<PracticePage />} />
-      <Route path="*" element={<LandingPage />} />
+      <Route path="*" element={<NotFoundPage />} />
     </Routes>
   )
 }
