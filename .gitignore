@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.vite/
+.env
+.env.*
+!.env.example
+.DS_Store
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.pyc
+.coverage
+supabase/.branches/
+supabase/.temp/
+

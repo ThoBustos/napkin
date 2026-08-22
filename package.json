@@ -1,0 +1,15 @@
+{
+  "name": "napkin",
+  "private": true,
+  "packageManager": "pnpm@11.1.1",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @napkin/web dev",
+    "build": "pnpm --filter @napkin/web build",
+    "lint": "pnpm --filter @napkin/web lint",
+    "test": "pnpm --filter @napkin/web test"
+  }
+}
+
