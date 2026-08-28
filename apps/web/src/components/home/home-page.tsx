@@ -1,44 +1,21 @@
-import { useEffect, useRef, useState } from "react"
+import { useState } from "react"
 import { ArrowRight, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target } from "lucide-react"
-import { BrandMark } from "@/components/landing/brand-mark"
+import { BrandMark } from "@/components/brand/brand-mark"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useNavigate } from "react-router-dom"
+import { previousSessions } from "./home-data"
 
 const durations = [5, 10, 15] as const
 
-const previousSessions = [
-  { id: 2, date: "Aug 21", duration: "20 min", solved: 19, accuracy: "84%", attempts: "1.2", technique: "Separate contribution margin from fixed costs before subtracting." },
-  { id: 3, date: "Aug 20", duration: "10 min", solved: 10, accuracy: "70%", attempts: "1.4", technique: "Turn percentage changes into simple fractions before multiplying." },
-] as const
-
 export function HomePage() {
   const navigate = useNavigate()
-  const accountRef = useRef<HTMLDivElement>(null)
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
-  const [accountOpen, setAccountOpen] = useState(false)
   const [reviewId, setReviewId] = useState<number | null>(null)
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
-
-  useEffect(() => {
-    if (!accountOpen) return
-
-    function closeOnOutsideClick(event: PointerEvent) {
-      if (!accountRef.current?.contains(event.target as Node)) setAccountOpen(false)
-    }
-
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape") setAccountOpen(false)
-    }
-
-    document.addEventListener("pointerdown", closeOnOutsideClick)
-    document.addEventListener("keydown", closeOnEscape)
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick)
-      document.removeEventListener("keydown", closeOnEscape)
-    }
-  }, [accountOpen])
 
   return (
     <main className="home-shell">
@@ -47,10 +24,12 @@ export function HomePage() {
           <BrandMark href="/home" />
           <div className="home-account-actions">
             <div className="home-streak" aria-label="14 exercise streak"><Flame aria-hidden="true" /><strong>14</strong></div>
-            <div className="home-account" ref={accountRef}>
-              <button className="home-user" type="button" aria-label="Open account menu" aria-expanded={accountOpen} aria-controls="account-menu" onClick={() => setAccountOpen((value) => !value)}>TB</button>
-              {accountOpen && <div className="account-menu" id="account-menu"><strong>Thomas Bustos</strong><span>demo@napkin.academy</span><button type="button" onClick={() => navigate("/login")}>Log out</button></div>}
-            </div>
+            <DropdownMenu modal={false}>
+              <div className="home-account">
+                <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">TB</button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end"><strong>Thomas Bustos</strong><span>demo@napkin.academy</span><DropdownMenuItem asChild><button type="button" onClick={() => navigate("/login")}>Log out</button></DropdownMenuItem></DropdownMenuContent>
+              </div>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -105,11 +84,11 @@ export function HomePage() {
           </section>
         </div>
       </div>
-      {reviewSession && (
-        <div className="review-backdrop" role="presentation" onMouseDown={() => setReviewId(null)}>
-          <section className="session-review" role="dialog" aria-modal="true" aria-labelledby="review-title" onMouseDown={(event) => event.stopPropagation()}>
+      <Dialog open={Boolean(reviewSession)} onOpenChange={(open) => { if (!open) setReviewId(null) }}>
+        {reviewSession && (
+          <DialogContent aria-describedby={undefined}>
             <span>Completed session · {reviewSession.date}</span>
-            <h2 id="review-title">Session review</h2>
+            <DialogTitle asChild><h2>Session review</h2></DialogTitle>
             <dl>
               <div><dt>Duration</dt><dd>{reviewSession.duration}</dd></div>
               <div><dt>Solved</dt><dd>{reviewSession.solved}</dd></div>
@@ -118,9 +97,9 @@ export function HomePage() {
             </dl>
             <div className="review-learning"><strong>Mental technique</strong><p>{reviewSession.technique}</p><strong>Business implication</strong><p>Faster decomposition makes the commercial driver easier to explain under pressure.</p></div>
             <Button type="button" onClick={() => setReviewId(null)}>Close review</Button>
-          </section>
-        </div>
-      )}
+          </DialogContent>
+        )}
+      </Dialog>
     </main>
   )
 }
