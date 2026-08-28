@@ -1,23 +1,25 @@
-import { type FormEvent, useState } from "react"
-import { ArrowRight } from "lucide-react"
+import { useState } from "react"
 import { BrandMark } from "@/components/brand/brand-mark"
 import { Button } from "@/components/ui/button"
-import { useNavigate } from "react-router-dom"
-
-type AuthMode = "sign-in" | "create-account"
+import { Navigate } from "react-router-dom"
+import { signInWithGoogle, useAuth } from "@/features/auth/auth-store"
 
 export function LoginPage() {
-  const navigate = useNavigate()
-  const [mode, setMode] = useState<AuthMode>("sign-in")
-  const isSignIn = mode === "sign-in"
+  const auth = useAuth()
+  const [error, setError] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
-  function changeMode(nextMode: AuthMode) {
-    setMode(nextMode)
-  }
+  if (auth.status === "authenticated") return <Navigate to="/home" replace />
 
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    navigate("/home")
+  async function submit() {
+    setError("")
+    setSubmitting(true)
+    try {
+      await signInWithGoogle()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not start Google sign in.")
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -27,29 +29,17 @@ export function LoginPage() {
 
         <div className="auth-form-wrap">
           <header className="auth-heading">
-            <h1 id="auth-title">{isSignIn ? "Welcome back" : "Create your account"}</h1>
-            <p>{isSignIn ? "Sign in to continue training." : "Start building faster business instincts."}</p>
+            <h1 id="auth-title">Welcome back</h1>
+            <p>Sign in with Google to continue training.</p>
           </header>
 
-          <form className="auth-form" onSubmit={submit}>
-            <label htmlFor="email">Email</label>
-            <input id="email" name="email" type="email" autoComplete="email" defaultValue="demo@napkin.academy" required />
-
-            <label htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" autoComplete={isSignIn ? "current-password" : "new-password"} defaultValue="napkin123" minLength={8} required />
-
-            <Button className="auth-submit" size="lg" type="submit">
-              {isSignIn ? "Sign in" : "Create account"} <ArrowRight aria-hidden="true" />
+          <div className="auth-form">
+            <Button className="auth-submit google-sign-in" size="lg" type="button" onClick={submit} disabled={submitting || auth.status === "loading" || auth.status === "unconfigured"}>
+              <span aria-hidden="true">G</span>{submitting ? "Opening Google…" : "Continue with Google"}
             </Button>
-
-          </form>
-
-          <p className="auth-switch">
-            {isSignIn ? "Don’t have an account?" : "Already have an account?"}{" "}
-            <button type="button" onClick={() => changeMode(isSignIn ? "create-account" : "sign-in")}>
-              {isSignIn ? "Create account" : "Sign in"}
-            </button>
-          </p>
+            {auth.status === "unconfigured" && <p className="auth-error" role="alert">Authentication is not configured for this deployment.</p>}
+            {error && <p className="auth-error" role="alert">{error}</p>}
+          </div>
         </div>
       </section>
 

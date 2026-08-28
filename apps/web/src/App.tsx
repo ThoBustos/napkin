@@ -1,9 +1,13 @@
-import { LoginPage } from "@/components/auth/login-page"
-import { HomePage } from "@/components/home/home-page"
 import { LandingPage } from "@/components/landing/landing-page"
-import { PracticePage } from "@/components/practice/practice-page"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { usePageMetadata } from "@/hooks/use-page-metadata"
+import { lazy, Suspense } from "react"
+
+const AuthCallbackPage = lazy(() => import("@/features/auth/auth-callback-page").then((module) => ({ default: module.AuthCallbackPage })))
+const HomePage = lazy(() => import("@/components/home/home-page").then((module) => ({ default: module.HomePage })))
+const LoginPage = lazy(() => import("@/components/auth/login-page").then((module) => ({ default: module.LoginPage })))
+const PracticePage = lazy(() => import("@/components/practice/practice-page").then((module) => ({ default: module.PracticePage })))
+const RequireAuth = lazy(() => import("@/features/auth/require-auth").then((module) => ({ default: module.RequireAuth })))
 
 function NotFoundPage() {
   usePageMetadata({ robots: "noindex, nofollow", title: "Page not found — Napkin" })
@@ -20,13 +24,16 @@ function NotFoundPage() {
 
 export function AppRoutes() {
   return (
-    <Routes>
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/home" element={<HomePage />} />
-      <Route path="/practice" element={<PracticePage />} />
-      <Route path="*" element={<NotFoundPage />} />
-    </Routes>
+    <Suspense fallback={<main className="auth-status" aria-live="polite">Loading Napkin…</main>}>
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/callback" element={<AuthCallbackPage />} />
+        <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />
+        <Route path="/practice" element={<RequireAuth><PracticePage /></RequireAuth>} />
+        <Route path="*" element={<NotFoundPage />} />
+      </Routes>
+    </Suspense>
   )
 }
 

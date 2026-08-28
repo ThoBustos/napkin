@@ -5,3 +5,4 @@
 - Prefer an accessible UI primitive for menus, dialogs, and other layered interactions instead of recreating focus and dismissal behavior.
 - Put cross-feature primitives in `components/ui`, shared product identity and layout in dedicated shared component folders, and feature-specific code with its feature.
 - Use a reducer when several state values form one workflow and can otherwise enter invalid combinations.
+- Browser code may use only the Supabase project URL and publishable key. Secret and service-role keys are backend-only, and every exposed user-owned table requires least-privilege grants plus RLS.

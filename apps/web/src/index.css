@@ -34,6 +34,11 @@ a { text-decoration: none; }
 .auth-form input:focus { border-color: var(--cobalt); box-shadow: 0 0 0 3px rgb(32 83 232 / 12%); }
 .auth-form input::placeholder { color: #9a9d9a; }
 .auth-submit { width: 100%; margin-top: 5px; }
+.google-sign-in { background: #fff; color: var(--ink); border: 1px solid var(--line); }
+.google-sign-in:hover { background: var(--cream); }
+.google-sign-in > span { display: grid; width: 24px; height: 24px; place-items: center; color: #4285f4; font-size: 18px; font-weight: 800; }
+.auth-error { margin: 14px 0 0; color: #a43f29; font-size: 14px; text-align: center; }
+.auth-status { min-height: 100vh; display: grid; place-items: center; background: var(--cream); color: var(--muted); font-family: var(--font-sans); }
 .auth-switch { margin: 27px 0 0; color: var(--muted); text-align: center; font-size: 14px; }
 .auth-switch button { min-height: 44px; padding: 0; border: 0; background: transparent; color: var(--cobalt); font: inherit; font-weight: 650; cursor: pointer; }
 .auth-switch button:hover { text-decoration: underline; text-underline-offset: 3px; }
