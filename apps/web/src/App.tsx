@@ -3,14 +3,10 @@ import { HomePage } from "@/components/home/home-page"
 import { LandingPage } from "@/components/landing/landing-page"
 import { PracticePage } from "@/components/practice/practice-page"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
-import { useEffect } from "react"
+import { usePageMetadata } from "@/hooks/use-page-metadata"
 
 function NotFoundPage() {
-  useEffect(() => {
-    const robots = document.querySelector<HTMLMetaElement>('meta[name="robots"]')
-    robots?.setAttribute("content", "noindex, nofollow")
-    document.title = "Page not found — Napkin"
-  }, [])
+  usePageMetadata({ robots: "noindex, nofollow", title: "Page not found — Napkin" })
 
   return (
     <main className="not-found">

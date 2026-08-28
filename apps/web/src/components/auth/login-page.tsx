@@ -1,6 +1,6 @@
 import { type FormEvent, useState } from "react"
 import { ArrowRight } from "lucide-react"
-import { BrandMark } from "@/components/landing/brand-mark"
+import { BrandMark } from "@/components/brand/brand-mark"
 import { Button } from "@/components/ui/button"
 import { useNavigate } from "react-router-dom"
 

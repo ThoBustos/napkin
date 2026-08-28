@@ -16,5 +16,16 @@ export default tseslint.config(
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
     },
   },
+  {
+    files: ["src/components/**/*.{ts,tsx}", "src/App.tsx"],
+    rules: {
+      "no-restricted-imports": ["error", {
+        paths: [{ name: "react", importNames: ["useEffect"], message: "Use a named hook for external synchronization; derive values or use event handlers otherwise." }],
+      }],
+    },
+  },
+  {
+    files: ["src/components/ui/**/*.{ts,tsx}"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
 )
-

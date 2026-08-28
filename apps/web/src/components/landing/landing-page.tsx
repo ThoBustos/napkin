@@ -1,5 +1,5 @@
 import { ArrowRight } from "lucide-react"
-import { BrandMark } from "./brand-mark"
+import { BrandMark } from "@/components/brand/brand-mark"
 import { ProductPreview } from "./product-preview"
 import { Button } from "@/components/ui/button"
 

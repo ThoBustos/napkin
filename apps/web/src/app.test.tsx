@@ -86,10 +86,10 @@ describe("Napkin V1 flow", () => {
     renderRoute("/home")
 
     await user.click(screen.getByRole("button", { name: "Open account menu" }))
-    expect(screen.getByRole("button", { name: "Log out" })).toBeTruthy()
+    expect(screen.getByRole("menuitem", { name: "Log out" })).toBeTruthy()
 
     await user.click(screen.getByRole("heading", { name: "Ready to train?" }))
-    expect(screen.queryByRole("button", { name: "Log out" })).toBeNull()
+    expect(screen.queryByRole("menuitem", { name: "Log out" })).toBeNull()
   })
 
   it("closes the account menu with Escape", async () => {
@@ -99,7 +99,7 @@ describe("Napkin V1 flow", () => {
     await user.click(screen.getByRole("button", { name: "Open account menu" }))
     await user.keyboard("{Escape}")
 
-    expect(screen.queryByRole("button", { name: "Log out" })).toBeNull()
+    expect(screen.queryByRole("menuitem", { name: "Log out" })).toBeNull()
     expect(screen.getByRole("button", { name: "Open account menu" }).getAttribute("aria-expanded")).toBe("false")
   })
 })
