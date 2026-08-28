@@ -36,7 +36,8 @@ Supabase
 ## Initial route ownership
 
 - `/` — landing
-- `/login` — mocked entry first, Supabase Auth later
+- `/login` — Google-only entry through Supabase Auth
+- `/auth/callback` — completes the browser OAuth redirect
 - `/practice` — setup and exercise loop
 - `/results` — session summary
 - `/api/*` — FastAPI endpoints when remote persistence is introduced
@@ -48,7 +49,7 @@ Supabase
 - `sessions`: mode, duration, start and completion
 - `attempts`: answer, correctness, response time and hint usage
 
-The first product slice keeps exercises in versioned frontend data and attempts in local storage. Remote tables are added only when cross-device progress is required.
+The first product slice keeps exercises in versioned frontend data and attempts in local storage. Supabase owns authentication and the initial RLS-protected profile row; remote training tables are added only when cross-device progress is required.
 
 ## Security boundaries
 
@@ -66,4 +67,3 @@ The first product slice keeps exercises in versioned frontend data and attempts 
 - Railway API service: run the FastAPI app from `apps/api`.
 - Supabase hosts Postgres and authentication.
 - Each service gets only the environment variables it needs.
-

@@ -8,7 +8,7 @@
 	encode zstd gzip
 
 	header {
-		Content-Security-Policy "default-src 'self'; base-uri 'self'; connect-src 'self' https://api.napkin.academy; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data:; object-src 'none'; script-src 'self'; style-src 'self'"
+		Content-Security-Policy "default-src 'self'; base-uri 'self'; connect-src 'self' https://api.napkin.academy https://*.supabase.co wss://*.supabase.co; font-src 'self'; form-action 'self'; frame-ancestors 'none'; img-src 'self' data: https://*.googleusercontent.com; object-src 'none'; script-src 'self'; style-src 'self'"
 		Referrer-Policy "strict-origin-when-cross-origin"
 		Strict-Transport-Security "max-age=31536000; includeSubDomains"
 		X-Content-Type-Options "nosniff"
@@ -17,13 +17,13 @@
 		-Server
 	}
 
-	@private path /login /home /practice
+	@private path /login /auth/callback /home /practice
 	header @private X-Robots-Tag "noindex, nofollow"
 
 	@assets path /assets/*
 	header @assets Cache-Control "public, max-age=31536000, immutable"
 
-	@app path / /login /home /practice
+	@app path / /login /auth/callback /home /practice
 	handle @app {
 		header Cache-Control "no-cache"
 		try_files {path} /index.html

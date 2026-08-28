@@ -1,10 +1,30 @@
 // @vitest-environment jsdom
 
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { AppRoutes } from "./App"
+
+const authMock = vi.hoisted(() => ({
+  signInWithGoogle: vi.fn(),
+  signOut: vi.fn(),
+  status: "authenticated" as "authenticated" | "unauthenticated",
+}))
+
+vi.mock("@/features/auth/auth-store", () => ({
+  signInWithGoogle: authMock.signInWithGoogle,
+  signOut: authMock.signOut,
+  useAuth: () => ({
+    status: authMock.status,
+    user: authMock.status === "authenticated" ? { email: "demo@napkin.academy", user_metadata: { full_name: "Thomas Bustos" } } : null,
+  }),
+}))
+
+beforeEach(() => {
+  authMock.status = "authenticated"
+  vi.clearAllMocks()
+})
 
 afterEach(() => {
   cleanup()
@@ -16,29 +36,38 @@ function renderRoute(route: string) {
 }
 
 describe("Napkin V1 flow", () => {
-  it("moves from login to Home", async () => {
+  it("starts Google sign in from the login page", async () => {
     const user = userEvent.setup()
+    authMock.status = "unauthenticated"
     renderRoute("/login")
 
-    await user.click(screen.getByRole("button", { name: /sign in/i }))
+    await user.click(await screen.findByRole("button", { name: /continue with google/i }))
 
-    expect(screen.getByRole("heading", { name: "Ready to train?" })).toBeTruthy()
+    expect(authMock.signInWithGoogle).toHaveBeenCalledOnce()
+  })
+
+  it("redirects signed-out users away from private routes", async () => {
+    authMock.status = "unauthenticated"
+    renderRoute("/home")
+
+    expect(await screen.findByRole("button", { name: /continue with google/i })).toBeTruthy()
+    expect(screen.queryByRole("heading", { name: "Ready to train?" })).toBeNull()
   })
 
   it("carries the selected duration into the practice timer", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
 
-    await user.click(screen.getByRole("button", { name: "15 min" }))
+    await user.click(await screen.findByRole("button", { name: "15 min" }))
     await user.click(screen.getByRole("button", { name: /start training/i }))
 
-    expect(screen.getByText("15:00")).toBeTruthy()
+    expect(await screen.findByText("15:00")).toBeTruthy()
   })
 
   it("keeps progression locked until the correct answer", async () => {
     const user = userEvent.setup()
     renderRoute("/practice?duration=10")
-    const answer = screen.getByRole("textbox", { name: "Your answer" })
+    const answer = await screen.findByRole("textbox", { name: "Your answer" })
 
     await user.type(answer, "1")
     await user.click(screen.getByRole("button", { name: /check answer/i }))
@@ -62,7 +91,7 @@ describe("Napkin V1 flow", () => {
     const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true)
     renderRoute("/practice?duration=10")
 
-    await user.click(screen.getByRole("button", { name: /leave session/i }))
+    await user.click(await screen.findByRole("button", { name: /leave session/i }))
     expect(screen.getByRole("heading", { name: /revenue is €12m/i })).toBeTruthy()
 
     await user.click(screen.getByRole("button", { name: /leave session/i }))
@@ -74,7 +103,7 @@ describe("Napkin V1 flow", () => {
     const user = userEvent.setup()
     renderRoute("/home")
 
-    await user.click(screen.getByRole("button", { name: /aug 21/i }))
+    await user.click(await screen.findByRole("button", { name: /aug 21/i }))
 
     expect(screen.getByRole("dialog", { name: "Session review" })).toBeTruthy()
     expect(screen.getByText("Mental technique")).toBeTruthy()
@@ -85,7 +114,7 @@ describe("Napkin V1 flow", () => {
     const user = userEvent.setup()
     renderRoute("/home")
 
-    await user.click(screen.getByRole("button", { name: "Open account menu" }))
+    await user.click(await screen.findByRole("button", { name: "Open account menu" }))
     expect(screen.getByRole("menuitem", { name: "Log out" })).toBeTruthy()
 
     await user.click(screen.getByRole("heading", { name: "Ready to train?" }))
@@ -96,10 +125,20 @@ describe("Napkin V1 flow", () => {
     const user = userEvent.setup()
     renderRoute("/home")
 
-    await user.click(screen.getByRole("button", { name: "Open account menu" }))
+    await user.click(await screen.findByRole("button", { name: "Open account menu" }))
     await user.keyboard("{Escape}")
 
     expect(screen.queryByRole("menuitem", { name: "Log out" })).toBeNull()
     expect(screen.getByRole("button", { name: "Open account menu" }).getAttribute("aria-expanded")).toBe("false")
+  })
+
+  it("signs out through the account menu", async () => {
+    const user = userEvent.setup()
+    renderRoute("/home")
+
+    await user.click(await screen.findByRole("button", { name: "Open account menu" }))
+    await user.click(screen.getByRole("menuitem", { name: "Log out" }))
+
+    expect(authMock.signOut).toHaveBeenCalledOnce()
   })
 })

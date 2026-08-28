@@ -6,16 +6,25 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useNavigate } from "react-router-dom"
 import { previousSessions } from "./home-data"
+import { signOut, useAuth } from "@/features/auth/auth-store"
 
 const durations = [5, 10, 15] as const
 
 export function HomePage() {
   const navigate = useNavigate()
+  const { user } = useAuth()
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
   const [reviewId, setReviewId] = useState<number | null>(null)
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
+  const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
+  const initials = fullName.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase() || "NA"
+
+  async function logOut() {
+    await signOut()
+    navigate("/login", { replace: true })
+  }
 
   return (
     <main className="home-shell">
@@ -26,8 +35,8 @@ export function HomePage() {
             <div className="home-streak" aria-label="14 exercise streak"><Flame aria-hidden="true" /><strong>14</strong></div>
             <DropdownMenu modal={false}>
               <div className="home-account">
-                <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">TB</button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><strong>Thomas Bustos</strong><span>demo@napkin.academy</span><DropdownMenuItem asChild><button type="button" onClick={() => navigate("/login")}>Log out</button></DropdownMenuItem></DropdownMenuContent>
+                <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
+                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
               </div>
             </DropdownMenu>
           </div>
