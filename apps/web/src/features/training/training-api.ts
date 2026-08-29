@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase"
+import { calculateTrainingSummary } from "./training-metrics"
 
 export interface TrainingQuestion {
   id: string
@@ -91,6 +92,28 @@ export async function finishPracticeSession(sessionId: string, status: "complete
     .update({ status, completed_at: status === "completed" ? new Date().toISOString() : null })
     .eq("id", sessionId)
   if (error) throw error
+}
+
+export async function getTrainingSummary(userId: string) {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const [sessionsResult, attemptsResult] = await Promise.all([
+    supabase
+      .from("practice_sessions")
+      .select("id, started_at, completed_at")
+      .eq("user_id", userId)
+      .eq("status", "completed")
+      .not("completed_at", "is", null),
+    supabase
+      .from("attempts")
+      .select("session_id, question_id, attempt_number, is_correct")
+      .eq("user_id", userId),
+  ])
+  if (sessionsResult.error) throw sessionsResult.error
+  if (attemptsResult.error) throw attemptsResult.error
+  return calculateTrainingSummary(
+    sessionsResult.data as { id: string; started_at: string; completed_at: string }[],
+    attemptsResult.data,
+  )
 }
 
 function shuffle<T>(values: T[]) {
