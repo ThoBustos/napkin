@@ -4,9 +4,9 @@ import { BrandMark } from "@/components/brand/brand-mark"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useNavigate } from "react-router-dom"
+import { useLocation, useNavigate } from "react-router-dom"
 import { signOut, useAuth } from "@/features/auth/auth-store"
-import { getSessionHistory, getTrainingSummary, type TrainingSessionHistory } from "@/features/training/training-api"
+import { getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
 import { emptyTrainingSummary } from "@/features/training/training-metrics"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 
@@ -14,12 +14,14 @@ const durations = [5, 10, 15] as const
 
 export function HomePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { user } = useAuth()
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
   const [reviewId, setReviewId] = useState<string | null>(null)
   const [summary, setSummary] = useState(emptyTrainingSummary)
   const [previousSessions, setPreviousSessions] = useState<TrainingSessionHistory[]>([])
+  const [sessionResult, setSessionResult] = useState<PracticeSessionResult | null>(() => (location.state as { sessionResult?: PracticeSessionResult } | null)?.sessionResult ?? null)
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
   const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
@@ -39,6 +41,11 @@ export function HomePage() {
   async function logOut() {
     await signOut()
     navigate("/login", { replace: true })
+  }
+
+  function closeSessionResult() {
+    setSessionResult(null)
+    navigate(location.pathname, { replace: true, state: null })
   }
 
   return (
@@ -132,6 +139,22 @@ export function HomePage() {
           </DialogContent>
         )}
       </Dialog>
+      <Dialog open={Boolean(sessionResult)} onOpenChange={(open) => { if (!open) closeSessionResult() }}>
+        {sessionResult && (
+          <DialogContent aria-describedby={undefined}>
+            <span>Training saved</span>
+            <DialogTitle asChild><h2>Session complete</h2></DialogTitle>
+            <dl>
+              <div><dt>Solved</dt><dd>{sessionResult.questionsSolved}</dd></div>
+              <div><dt>First try</dt><dd>{sessionResult.firstTryRate}%</dd></div>
+              <div><dt>Avg. response</dt><dd>{sessionResult.averageResponseSeconds}s</dd></div>
+              <div><dt>Duration</dt><dd>{formatElapsed(sessionResult.elapsedSeconds)}</dd></div>
+            </dl>
+            <p className="session-result-copy">Your dashboard and session history now include this training.</p>
+            <Button type="button" onClick={closeSessionResult}>View dashboard</Button>
+          </DialogContent>
+        )}
+      </Dialog>
     </main>
   )
 }
@@ -141,4 +164,11 @@ function formatMinutes(minutes: number) {
   const hours = Math.floor(minutes / 60)
   const remainder = minutes % 60
   return remainder ? `${hours}h ${remainder}m` : `${hours}h`
+}
+
+function formatElapsed(seconds: number) {
+  if (seconds < 60) return `${seconds}s`
+  const minutes = Math.floor(seconds / 60)
+  const remainder = seconds % 60
+  return remainder ? `${minutes}m ${remainder}s` : `${minutes}m`
 }

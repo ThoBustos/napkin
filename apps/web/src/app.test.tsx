@@ -112,7 +112,37 @@ describe("Napkin V1 flow", () => {
 
     await user.click(screen.getByRole("button", { name: /leave session/i }))
     expect(confirm).toHaveBeenCalledTimes(2)
+    expect(trainingMock.finishPracticeSession).toHaveBeenCalledWith("session-1", "abandoned")
     expect(screen.getByRole("heading", { name: "Ready to train?" })).toBeTruthy()
+  })
+
+  it("saves an early session with answers and shows its results", async () => {
+    const user = userEvent.setup()
+    vi.spyOn(window, "confirm").mockReturnValue(true)
+    renderRoute("/practice?duration=10")
+    const answer = await screen.findByRole("textbox", { name: "Your answer" })
+
+    await user.type(answer, "18.75")
+    await user.click(screen.getByRole("button", { name: /check answer/i }))
+    await screen.findByText(/correct/i)
+    await user.click(screen.getByRole("button", { name: /leave session/i }))
+
+    expect(await screen.findByRole("dialog", { name: "Session complete" })).toBeTruthy()
+    expect(trainingMock.finishPracticeSession).toHaveBeenCalledWith("session-1", "completed")
+    expect(screen.getByText("100%")).toBeTruthy()
+  })
+
+  it("keeps the current question open when saving an answer fails", async () => {
+    const user = userEvent.setup()
+    trainingMock.recordPracticeAttempt.mockRejectedValueOnce(new Error("offline"))
+    renderRoute("/practice?duration=10")
+    const answer = await screen.findByRole("textbox", { name: "Your answer" })
+
+    await user.type(answer, "18.75")
+    await user.click(screen.getByRole("button", { name: /check answer/i }))
+
+    expect((await screen.findByRole("alert")).textContent).toMatch(/could not be saved/i)
+    expect(screen.queryByRole("button", { name: /next question/i })).toBeNull()
   })
 
   it("opens completed sessions as review-only", async () => {
