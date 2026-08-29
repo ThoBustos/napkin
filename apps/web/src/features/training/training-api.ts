@@ -12,6 +12,17 @@ export interface TrainingQuestion {
   hint: string
 }
 
+export interface PracticeAttemptInput {
+  sessionId: string
+  questionId: string
+  userId: string
+  attemptNumber: number
+  submittedAnswer: number
+  isCorrect: boolean
+  usedHint: boolean
+  responseTimeMs: number
+}
+
 interface QuestionRow {
   id: string
   category: string
@@ -45,6 +56,41 @@ export async function getStarterQuestions(limit = 10): Promise<TrainingQuestion[
     tolerance: Number(question.answer_tolerance),
     hint: question.hint,
   }))
+}
+
+export async function startPracticeSession(userId: string, requestedDurationMinutes: number) {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const { data, error } = await supabase
+    .from("practice_sessions")
+    .insert({ user_id: userId, requested_duration_minutes: requestedDurationMinutes })
+    .select("id")
+    .single()
+  if (error) throw error
+  return data.id as string
+}
+
+export async function recordPracticeAttempt(input: PracticeAttemptInput) {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const { error } = await supabase.from("attempts").insert({
+    session_id: input.sessionId,
+    question_id: input.questionId,
+    user_id: input.userId,
+    attempt_number: input.attemptNumber,
+    submitted_answer: input.submittedAnswer,
+    is_correct: input.isCorrect,
+    used_hint: input.usedHint,
+    response_time_ms: input.responseTimeMs,
+  })
+  if (error) throw error
+}
+
+export async function finishPracticeSession(sessionId: string, status: "completed" | "abandoned") {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const { error } = await supabase
+    .from("practice_sessions")
+    .update({ status, completed_at: status === "completed" ? new Date().toISOString() : null })
+    .eq("id", sessionId)
+  if (error) throw error
 }
 
 function shuffle<T>(values: T[]) {

@@ -12,16 +12,23 @@ const authMock = vi.hoisted(() => ({
   status: "authenticated" as "authenticated" | "unauthenticated",
 }))
 
+const trainingMock = vi.hoisted(() => ({
+  finishPracticeSession: vi.fn().mockResolvedValue(undefined),
+  recordPracticeAttempt: vi.fn().mockResolvedValue(undefined),
+  startPracticeSession: vi.fn().mockResolvedValue("session-1"),
+}))
+
 vi.mock("@/features/auth/auth-store", () => ({
   signInWithGoogle: authMock.signInWithGoogle,
   signOut: authMock.signOut,
   useAuth: () => ({
     status: authMock.status,
-    user: authMock.status === "authenticated" ? { email: "demo@napkin.academy", user_metadata: { full_name: "Thomas Bustos" } } : null,
+    user: authMock.status === "authenticated" ? { id: "user-1", email: "demo@napkin.academy", user_metadata: { full_name: "Thomas Bustos" } } : null,
   }),
 }))
 
 vi.mock("@/features/training/training-api", () => ({
+  ...trainingMock,
   getStarterQuestions: vi.fn().mockResolvedValue([
     { id: "growth", category: "Growth projection", difficulty: 1, prompt: "Revenue is €12M and grows 25% annually. What is revenue after 2 years?", instruction: "Enter the ending revenue after compounding both years.", unit: "€M", answer: 18.75, tolerance: 0.01, hint: "Find 25% by dividing by four. Year 1 reaches €15M; repeat on the new total." },
     { id: "profit", category: "Operating profit", difficulty: 1, prompt: "Net sales are €240k. Variable costs are 60% and fixed costs are €54k. What is operating profit?", instruction: "Enter the resulting operating profit.", unit: "€k", answer: 42, tolerance: 0.01, hint: "Find 40% contribution first, then subtract fixed costs." },
