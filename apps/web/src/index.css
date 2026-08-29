@@ -36,7 +36,7 @@ a { text-decoration: none; }
 .auth-submit { width: 100%; margin-top: 5px; }
 .google-sign-in { background: #fff; color: var(--ink); border: 1px solid var(--line); }
 .google-sign-in:hover { background: var(--cream); }
-.google-sign-in > span { display: grid; width: 24px; height: 24px; place-items: center; color: #4285f4; font-size: 18px; font-weight: 800; }
+.google-sign-in > svg { width: 22px; height: 22px; flex: 0 0 auto; }
 .auth-error { margin: 14px 0 0; color: #a43f29; font-size: 14px; text-align: center; }
 .auth-status { min-height: 100vh; display: grid; place-items: center; background: var(--cream); color: var(--muted); font-family: var(--font-sans); }
 .auth-switch { margin: 27px 0 0; color: var(--muted); text-align: center; font-size: 14px; }
