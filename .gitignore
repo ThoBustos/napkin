@@ -11,6 +11,6 @@ __pycache__/
 .venv/
 *.pyc
 .coverage
+docs/
 supabase/.branches/
 supabase/.temp/
-

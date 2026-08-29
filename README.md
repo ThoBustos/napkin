@@ -17,5 +17,8 @@ uv sync --frozen
 uv run fastapi dev src/napkin_api/main.py
 ```
 
-Architecture and UI conventions are documented in `docs/`.
+Architecture and coding conventions are documented in `AGENTS.md`.
 
+## License
+
+Napkin is available under the GNU Affero General Public License v3.0 or later.
