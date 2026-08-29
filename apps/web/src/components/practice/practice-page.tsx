@@ -1,4 +1,4 @@
-import { type FormEvent, useReducer } from "react"
+import { type FormEvent, useReducer, useState } from "react"
 import { ArrowRight, Check, Clock3, Flame, Lightbulb } from "lucide-react"
 import { BrandMark } from "@/components/brand/brand-mark"
 import { ProductPreview } from "@/components/landing/product-preview"
@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useCountdown } from "@/hooks/use-countdown"
 import { initialTrainingState, trainingReducer } from "./training-reducer"
-import { speedQuestions } from "./practice-data"
+import { getStarterQuestions, type TrainingQuestion } from "@/features/training/training-api"
+import { useMountEffect } from "@/hooks/use-mount-effect"
 
 export function PracticePage() {
   const { search } = useLocation()
@@ -24,15 +25,36 @@ export function PracticePage() {
     )
   }
 
-  return <SpeedPractice initialSeconds={minutes * 60} />
+  return <SpeedPracticeLoader initialSeconds={minutes * 60} />
 }
 
-function SpeedPractice({ initialSeconds }: { initialSeconds: number }) {
+function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
+  const [questions, setQuestions] = useState<TrainingQuestion[] | null>(null)
+  const [error, setError] = useState("")
+
+  useMountEffect(() => {
+    let active = true
+    void getStarterQuestions().then((nextQuestions) => {
+      if (!active) return
+      if (nextQuestions.length === 0) throw new Error("No training questions are available yet.")
+      setQuestions(nextQuestions)
+    }).catch((reason: unknown) => {
+      if (active) setError(reason instanceof Error ? reason.message : "Could not load training.")
+    })
+    return () => { active = false }
+  })
+
+  if (error) return <main className="auth-status" role="alert">{error}</main>
+  if (!questions) return <main className="auth-status" aria-live="polite">Preparing your session…</main>
+  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} />
+}
+
+function SpeedPractice({ initialSeconds, questions }: { initialSeconds: number; questions: TrainingQuestion[] }) {
   const navigate = useNavigate()
   const [{ answer, checked, hint, questionIndex }, dispatch] = useReducer(trainingReducer, initialTrainingState)
   const { clock } = useCountdown(initialSeconds)
-  const question = speedQuestions[questionIndex]
-  const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) < .01
+  const question = questions[questionIndex]
+  const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) <= question.tolerance
 
   function leave() {
     if (window.confirm("Leave this session? Your current answer will not be saved.")) navigate("/home")
@@ -44,7 +66,7 @@ function SpeedPractice({ initialSeconds }: { initialSeconds: number }) {
   }
 
   function next() {
-    if (questionIndex === speedQuestions.length - 1) {
+    if (questionIndex === questions.length - 1) {
       navigate("/home")
       return
     }
@@ -54,7 +76,7 @@ function SpeedPractice({ initialSeconds }: { initialSeconds: number }) {
   return (
     <main className="speed-shell">
       <div className="speed-brand"><BrandMark href="/home" /></div>
-      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")} <small>/ 10</small></strong><Flame aria-hidden="true" /><b>14</b></div>
+      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")} <small>/ {questions.length}</small></strong><Flame aria-hidden="true" /><b>14</b></div>
 
       <aside className="speed-session">
         <div><Clock3 aria-hidden="true" /><span>Session left</span></div>
