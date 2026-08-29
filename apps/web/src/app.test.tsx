@@ -26,7 +26,7 @@ vi.mock("@/features/auth/auth-store", () => ({
   signOut: authMock.signOut,
   useAuth: () => ({
     status: authMock.status,
-    user: authMock.status === "authenticated" ? { id: "user-1", email: "demo@napkin.academy", user_metadata: { full_name: "Thomas Bustos" } } : null,
+    user: authMock.status === "authenticated" ? { id: "user-1", email: "athlete@example.com", user_metadata: { full_name: "Napkin Athlete" } } : null,
   }),
 }))
 
