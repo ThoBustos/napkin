@@ -80,6 +80,13 @@ describe("Napkin V1 flow", () => {
     expect(await screen.findByText("15:00")).toBeTruthy()
   })
 
+  it("shows the persisted streak during practice", async () => {
+    trainingMock.getTrainingSummary.mockResolvedValueOnce({ completedSessions: 7, exercisesSolved: 20, exercisesPerTenMinutes: 10, firstTryRate: 80, minutesThisWeek: 30, totalMinutes: 70, streak: 4 })
+    renderRoute("/practice?duration=10")
+
+    expect(await screen.findByLabelText("4 day streak")).toBeTruthy()
+  })
+
   it("keeps progression locked until the correct answer", async () => {
     const user = userEvent.setup()
     renderRoute("/practice?duration=10")

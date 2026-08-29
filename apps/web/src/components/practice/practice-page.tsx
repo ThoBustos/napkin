@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useCountdown } from "@/hooks/use-countdown"
 import { initialTrainingState, trainingReducer } from "./training-reducer"
-import { finishPracticeSession, getStarterQuestions, recordPracticeAttempt, startPracticeSession, type PracticeSessionResult, type TrainingQuestion } from "@/features/training/training-api"
+import { finishPracticeSession, getStarterQuestions, getTrainingSummary, recordPracticeAttempt, startPracticeSession, type PracticeSessionResult, type TrainingQuestion } from "@/features/training/training-api"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 import { useAuth } from "@/features/auth/auth-store"
 
@@ -33,6 +33,7 @@ function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
   const { user } = useAuth()
   const [questions, setQuestions] = useState<TrainingQuestion[] | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
+  const [streak, setStreak] = useState<number | null>(null)
   const [error, setError] = useState("")
 
   useMountEffect(() => {
@@ -41,11 +42,13 @@ function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
     void Promise.all([
       getStarterQuestions(),
       startPracticeSession(user.id, Math.ceil(initialSeconds / 60)),
-    ]).then(([nextQuestions, nextSessionId]) => {
+      getTrainingSummary(user.id),
+    ]).then(([nextQuestions, nextSessionId, summary]) => {
       if (!active) return
       if (nextQuestions.length === 0) throw new Error("No training questions are available yet.")
       setQuestions(nextQuestions)
       setSessionId(nextSessionId)
+      setStreak(summary.streak)
     }).catch((reason: unknown) => {
       if (active) setError(reason instanceof Error ? reason.message : "Could not load training.")
     })
@@ -53,11 +56,11 @@ function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
   })
 
   if (error) return <main className="auth-status" role="alert">{error}</main>
-  if (!questions || !sessionId || !user) return <main className="auth-status" aria-live="polite">Preparing your session…</main>
-  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} sessionId={sessionId} userId={user.id} />
+  if (!questions || !sessionId || streak === null || !user) return <main className="auth-status" aria-live="polite">Preparing your session…</main>
+  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} sessionId={sessionId} userId={user.id} streak={streak} />
 }
 
-function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; userId: string }) {
+function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; userId: string; streak: number }) {
   const navigate = useNavigate()
   const [{ answer, checked, hint, questionIndex }, dispatch] = useReducer(trainingReducer, initialTrainingState)
   const attemptNumbers = useRef(new Map<string, number>())
@@ -161,7 +164,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initi
   return (
     <main className="speed-shell">
       <div className="speed-brand"><BrandMark href="/home" /></div>
-      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")}</strong><Flame aria-hidden="true" /><b>14</b></div>
+      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")}</strong><Flame aria-hidden="true" /><b aria-label={`${streak} day streak`}>{streak}</b></div>
 
       <aside className="speed-session">
         <div><Clock3 aria-hidden="true" /><span>Session left</span></div>
