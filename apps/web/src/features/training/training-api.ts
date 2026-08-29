@@ -124,6 +124,32 @@ export async function finishPracticeSession(sessionId: string, status: "complete
   if (error) throw error
 }
 
+export async function getPracticeSessionResult(sessionId: string, userId: string): Promise<PracticeSessionResult> {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const { data, error } = await supabase
+    .from("practice_sessions")
+    .select("id, started_at, completed_at, attempts(question_id, attempt_number, is_correct, response_time_ms)")
+    .eq("id", sessionId)
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .single()
+  if (error) throw error
+
+  const attempts = data.attempts as Array<{ question_id: string; attempt_number: number; is_correct: boolean; response_time_ms: number }>
+  const solved = new Map<string, { firstTry: boolean; responseTimeMs: number }>()
+  attempts.filter((attempt) => attempt.is_correct).forEach((attempt) => {
+    if (!solved.has(attempt.question_id)) solved.set(attempt.question_id, { firstTry: attempt.attempt_number === 1, responseTimeMs: attempt.response_time_ms })
+  })
+  const solvedValues = [...solved.values()]
+  return {
+    sessionId: data.id,
+    questionsSolved: solved.size,
+    firstTryRate: solved.size ? Math.round((solvedValues.filter((question) => question.firstTry).length / solved.size) * 100) : 0,
+    averageResponseSeconds: solved.size ? Math.round((solvedValues.reduce((total, question) => total + question.responseTimeMs, 0) / solved.size / 100)) / 10 : 0,
+    elapsedSeconds: Math.max(0, Math.round((new Date(data.completed_at).getTime() - new Date(data.started_at).getTime()) / 1000)),
+  }
+}
+
 export async function getTrainingSummary(userId: string) {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
   const [sessionsResult, attemptsResult] = await Promise.all([

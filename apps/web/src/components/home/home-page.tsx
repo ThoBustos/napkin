@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useLocation, useNavigate } from "react-router-dom"
 import { signOut, useAuth } from "@/features/auth/auth-store"
-import { getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
+import { getPracticeSessionResult, getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
 import { emptyTrainingSummary } from "@/features/training/training-metrics"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 
@@ -21,7 +21,8 @@ export function HomePage() {
   const [reviewId, setReviewId] = useState<string | null>(null)
   const [summary, setSummary] = useState(emptyTrainingSummary)
   const [previousSessions, setPreviousSessions] = useState<TrainingSessionHistory[]>([])
-  const [sessionResult, setSessionResult] = useState<PracticeSessionResult | null>(() => (location.state as { sessionResult?: PracticeSessionResult } | null)?.sessionResult ?? null)
+  const [sessionResult, setSessionResult] = useState<PracticeSessionResult | null>(null)
+  const completedSessionId = new URLSearchParams(location.search).get("completed")
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
   const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
@@ -35,6 +36,11 @@ export function HomePage() {
       setSummary(nextSummary)
       setPreviousSessions(nextSessions)
     })
+    if (completedSessionId) {
+      void getPracticeSessionResult(completedSessionId, user.id).then((result) => {
+        if (active) setSessionResult(result)
+      })
+    }
     return () => { active = false }
   })
 
@@ -45,7 +51,7 @@ export function HomePage() {
 
   function closeSessionResult() {
     setSessionResult(null)
-    navigate(location.pathname, { replace: true, state: null })
+    navigate(location.pathname, { replace: true })
   }
 
   return (

@@ -17,6 +17,7 @@ const trainingMock = vi.hoisted(() => ({
   recordPracticeAttempt: vi.fn().mockResolvedValue(undefined),
   startPracticeSession: vi.fn().mockResolvedValue("session-1"),
   getTrainingSummary: vi.fn().mockResolvedValue({ completedSessions: 0, exercisesSolved: 0, exercisesPerTenMinutes: 0, firstTryRate: 0, minutesThisWeek: 0, totalMinutes: 0, streak: 0 }),
+  getPracticeSessionResult: vi.fn().mockResolvedValue({ sessionId: "session-1", questionsSolved: 1, firstTryRate: 100, averageResponseSeconds: 2, elapsedSeconds: 30 }),
   getSessionHistory: vi.fn().mockResolvedValue([{ id: "history-1", date: "Aug 29", duration: "10 min", solved: 2, accuracy: "50%", averageAttempts: "1.5", questions: [{ id: "growth", prompt: "Revenue grows 25%.", unit: "€M", correctAnswer: 18.75, submittedAnswer: 18.75, attempts: 1, firstTry: true, usedHint: false }] }]),
 }))
 
@@ -111,21 +112,21 @@ describe("Napkin V1 flow", () => {
 
   it("confirms before leaving a session", async () => {
     const user = userEvent.setup()
-    const confirm = vi.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValueOnce(true)
     renderRoute("/practice?duration=10")
 
     await user.click(await screen.findByRole("button", { name: /leave session/i }))
+    expect(screen.getByRole("dialog", { name: "End this session?" })).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: /keep training/i }))
     expect(screen.getByRole("heading", { name: /revenue is €12m/i })).toBeTruthy()
 
     await user.click(screen.getByRole("button", { name: /leave session/i }))
-    expect(confirm).toHaveBeenCalledTimes(2)
+    await user.click(screen.getByRole("button", { name: /end session/i }))
     expect(trainingMock.finishPracticeSession).toHaveBeenCalledWith("session-1", "abandoned")
     expect(screen.getByRole("heading", { name: "Ready to train?" })).toBeTruthy()
   })
 
   it("saves an early session with answers and shows its results", async () => {
     const user = userEvent.setup()
-    vi.spyOn(window, "confirm").mockReturnValue(true)
     renderRoute("/practice?duration=10")
     const answer = await screen.findByRole("textbox", { name: "Your answer" })
 
@@ -133,9 +134,11 @@ describe("Napkin V1 flow", () => {
     await user.click(screen.getByRole("button", { name: /check answer/i }))
     await screen.findByText(/correct/i)
     await user.click(screen.getByRole("button", { name: /leave session/i }))
+    await user.click(screen.getByRole("button", { name: /end session/i }))
 
     expect(await screen.findByRole("dialog", { name: "Session complete" })).toBeTruthy()
     expect(trainingMock.finishPracticeSession).toHaveBeenCalledWith("session-1", "completed")
+    expect(trainingMock.getPracticeSessionResult).toHaveBeenCalledWith("session-1", "user-1")
     expect(screen.getByText("100%")).toBeTruthy()
   })
 
