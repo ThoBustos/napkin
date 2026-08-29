@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useCountdown } from "@/hooks/use-countdown"
 import { initialTrainingState, trainingReducer } from "./training-reducer"
-import { finishPracticeSession, getStarterQuestions, recordPracticeAttempt, startPracticeSession, type TrainingQuestion } from "@/features/training/training-api"
+import { finishPracticeSession, getStarterQuestions, recordPracticeAttempt, startPracticeSession, type PracticeSessionResult, type TrainingQuestion } from "@/features/training/training-api"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 import { useAuth } from "@/features/auth/auth-store"
 
@@ -62,6 +62,10 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initi
   const [{ answer, checked, hint, questionIndex }, dispatch] = useReducer(trainingReducer, initialTrainingState)
   const attemptNumbers = useRef(new Map<string, number>())
   const attemptsSubmitted = useRef(0)
+  const solvedQuestions = useRef(new Set<string>())
+  const firstTrySolved = useRef(0)
+  const totalResponseTimeMs = useRef(0)
+  const sessionStartedAt = useRef(0)
   const questionStartedAt = useRef(0)
   const pendingWrite = useRef<Promise<void> | null>(null)
   const finalizing = useRef(false)
@@ -71,7 +75,11 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initi
   const question = questions[questionIndex % questions.length]
   const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) <= question.tolerance
 
-  useMountEffect(() => { questionStartedAt.current = Date.now() })
+  useMountEffect(() => {
+    const startedAt = Date.now()
+    questionStartedAt.current = startedAt
+    sessionStartedAt.current = startedAt
+  })
 
   function leave() {
     const message = attemptsSubmitted.current > 0
@@ -104,6 +112,11 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initi
       await write
       attemptNumbers.current.set(question.id, nextAttemptNumber)
       attemptsSubmitted.current += 1
+      if (correct && !solvedQuestions.current.has(question.id)) {
+        solvedQuestions.current.add(question.id)
+        if (nextAttemptNumber === 1) firstTrySolved.current += 1
+        totalResponseTimeMs.current += Date.now() - questionStartedAt.current
+      }
       dispatch({ type: "check" })
     } catch {
       setSaveError("Your answer could not be saved. Check your connection and try again.")
@@ -127,7 +140,15 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initi
       await pendingWrite.current?.catch(() => undefined)
       const status = attemptsSubmitted.current > 0 ? "completed" : "abandoned"
       await finishPracticeSession(sessionId, status)
-      navigate("/home", { replace: true })
+      const solved = solvedQuestions.current.size
+      const result: PracticeSessionResult | null = status === "completed" ? {
+        sessionId,
+        questionsSolved: solved,
+        firstTryRate: solved > 0 ? Math.round((firstTrySolved.current / solved) * 100) : 0,
+        averageResponseSeconds: solved > 0 ? Math.round(totalResponseTimeMs.current / solved / 100) / 10 : 0,
+        elapsedSeconds: Math.max(0, Math.round((Date.now() - sessionStartedAt.current) / 1000)),
+      } : null
+      navigate("/home", { replace: true, state: result ? { sessionResult: result } : null })
     } catch {
       finalizing.current = false
       setFinishing(false)

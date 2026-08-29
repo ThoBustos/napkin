@@ -45,6 +45,14 @@ export interface TrainingSessionHistory {
   questions: SessionQuestionReview[]
 }
 
+export interface PracticeSessionResult {
+  sessionId: string
+  questionsSolved: number
+  firstTryRate: number
+  averageResponseSeconds: number
+  elapsedSeconds: number
+}
+
 interface QuestionRow {
   id: string
   category: string
