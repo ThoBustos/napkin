@@ -1,4 +1,4 @@
-import { type FormEvent, useReducer, useState } from "react"
+import { type FormEvent, useReducer, useRef, useState } from "react"
 import { ArrowRight, Check, Clock3, Flame, Lightbulb } from "lucide-react"
 import { BrandMark } from "@/components/brand/brand-mark"
 import { ProductPreview } from "@/components/landing/product-preview"
@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useCountdown } from "@/hooks/use-countdown"
 import { initialTrainingState, trainingReducer } from "./training-reducer"
-import { getStarterQuestions, type TrainingQuestion } from "@/features/training/training-api"
+import { finishPracticeSession, getStarterQuestions, recordPracticeAttempt, startPracticeSession, type TrainingQuestion } from "@/features/training/training-api"
 import { useMountEffect } from "@/hooks/use-mount-effect"
+import { useAuth } from "@/features/auth/auth-store"
 
 export function PracticePage() {
   const { search } = useLocation()
@@ -29,15 +30,22 @@ export function PracticePage() {
 }
 
 function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
+  const { user } = useAuth()
   const [questions, setQuestions] = useState<TrainingQuestion[] | null>(null)
+  const [sessionId, setSessionId] = useState<string | null>(null)
   const [error, setError] = useState("")
 
   useMountEffect(() => {
     let active = true
-    void getStarterQuestions().then((nextQuestions) => {
+    if (!user) return
+    void Promise.all([
+      getStarterQuestions(),
+      startPracticeSession(user.id, Math.ceil(initialSeconds / 60)),
+    ]).then(([nextQuestions, nextSessionId]) => {
       if (!active) return
       if (nextQuestions.length === 0) throw new Error("No training questions are available yet.")
       setQuestions(nextQuestions)
+      setSessionId(nextSessionId)
     }).catch((reason: unknown) => {
       if (active) setError(reason instanceof Error ? reason.message : "Could not load training.")
     })
@@ -45,31 +53,53 @@ function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
   })
 
   if (error) return <main className="auth-status" role="alert">{error}</main>
-  if (!questions) return <main className="auth-status" aria-live="polite">Preparing your session…</main>
-  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} />
+  if (!questions || !sessionId || !user) return <main className="auth-status" aria-live="polite">Preparing your session…</main>
+  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} sessionId={sessionId} userId={user.id} />
 }
 
-function SpeedPractice({ initialSeconds, questions }: { initialSeconds: number; questions: TrainingQuestion[] }) {
+function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; userId: string }) {
   const navigate = useNavigate()
   const [{ answer, checked, hint, questionIndex }, dispatch] = useReducer(trainingReducer, initialTrainingState)
+  const attemptNumber = useRef(0)
+  const questionStartedAt = useRef(0)
+  const [saveError, setSaveError] = useState("")
   const { clock } = useCountdown(initialSeconds)
   const question = questions[questionIndex]
   const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) <= question.tolerance
 
+  useMountEffect(() => { questionStartedAt.current = Date.now() })
+
   function leave() {
-    if (window.confirm("Leave this session? Your current answer will not be saved.")) navigate("/home")
+    if (!window.confirm("Leave this session? Your current answer will not be saved.")) return
+    void finishPracticeSession(sessionId, "abandoned").finally(() => navigate("/home"))
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    const submittedAnswer = Number(answer.replace(",", "."))
+    if (!Number.isFinite(submittedAnswer)) return
+    attemptNumber.current += 1
     dispatch({ type: "check" })
+    setSaveError("")
+    void recordPracticeAttempt({
+      sessionId,
+      questionId: question.id,
+      userId,
+      attemptNumber: attemptNumber.current,
+      submittedAnswer,
+      isCorrect: correct,
+      usedHint: hint,
+      responseTimeMs: Date.now() - questionStartedAt.current,
+    }).catch(() => setSaveError("Your answer could not be saved. Check your connection and try again."))
   }
 
   function next() {
     if (questionIndex === questions.length - 1) {
-      navigate("/home")
+      void finishPracticeSession(sessionId, "completed").finally(() => navigate("/home"))
       return
     }
+    attemptNumber.current = 0
+    questionStartedAt.current = Date.now()
     dispatch({ type: "next" })
   }
 
@@ -97,6 +127,7 @@ function SpeedPractice({ initialSeconds, questions }: { initialSeconds: number; 
 
         {hint && <div className="speed-hint"><Lightbulb aria-hidden="true" /><span>{question.hint}</span></div>}
         {checked && <div className={`speed-feedback ${correct ? "is-correct" : "is-wrong"}`} role="status">{correct && <Check aria-hidden="true" />}<span>{correct ? `Correct — ${question.answer} ${question.unit}.` : "Not yet. Use the hint and try again."}</span></div>}
+        {saveError && <p className="auth-error" role="alert">{saveError}</p>}
 
         <div className="speed-actions">
           <Button variant="outline" size="lg" type="button" onClick={() => dispatch({ type: "hint" })} disabled={hint}><Lightbulb aria-hidden="true" /> Hint</Button>
