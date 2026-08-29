@@ -21,6 +21,13 @@ vi.mock("@/features/auth/auth-store", () => ({
   }),
 }))
 
+vi.mock("@/features/training/training-api", () => ({
+  getStarterQuestions: vi.fn().mockResolvedValue([
+    { id: "growth", category: "Growth projection", difficulty: 1, prompt: "Revenue is €12M and grows 25% annually. What is revenue after 2 years?", instruction: "Enter the ending revenue after compounding both years.", unit: "€M", answer: 18.75, tolerance: 0.01, hint: "Find 25% by dividing by four. Year 1 reaches €15M; repeat on the new total." },
+    { id: "profit", category: "Operating profit", difficulty: 1, prompt: "Net sales are €240k. Variable costs are 60% and fixed costs are €54k. What is operating profit?", instruction: "Enter the resulting operating profit.", unit: "€k", answer: 42, tolerance: 0.01, hint: "Find 40% contribution first, then subtract fixed costs." },
+  ]),
+}))
+
 beforeEach(() => {
   authMock.status = "authenticated"
   vi.clearAllMocks()
