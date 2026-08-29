@@ -17,6 +17,7 @@ const trainingMock = vi.hoisted(() => ({
   recordPracticeAttempt: vi.fn().mockResolvedValue(undefined),
   startPracticeSession: vi.fn().mockResolvedValue("session-1"),
   getTrainingSummary: vi.fn().mockResolvedValue({ completedSessions: 0, exercisesSolved: 0, exercisesPerTenMinutes: 0, firstTryRate: 0, minutesThisWeek: 0, totalMinutes: 0, streak: 0 }),
+  getSessionHistory: vi.fn().mockResolvedValue([{ id: "history-1", date: "Aug 29", duration: "10 min", solved: 2, accuracy: "50%", averageAttempts: "1.5", questions: [{ id: "growth", prompt: "Revenue grows 25%.", unit: "€M", correctAnswer: 18.75, submittedAnswer: 18.75, attempts: 1, firstTry: true, usedHint: false }] }]),
 }))
 
 vi.mock("@/features/auth/auth-store", () => ({
@@ -118,10 +119,10 @@ describe("Napkin V1 flow", () => {
     const user = userEvent.setup()
     renderRoute("/home")
 
-    await user.click(await screen.findByRole("button", { name: /aug 21/i }))
+    await user.click(await screen.findByRole("button", { name: /aug 29/i }))
 
     expect(screen.getByRole("dialog", { name: "Session review" })).toBeTruthy()
-    expect(screen.getByText("Mental technique")).toBeTruthy()
+    expect(screen.getByText("Questions")).toBeTruthy()
     expect(screen.queryByRole("button", { name: /retake/i })).toBeNull()
   })
 
