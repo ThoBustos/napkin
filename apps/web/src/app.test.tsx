@@ -16,6 +16,7 @@ const trainingMock = vi.hoisted(() => ({
   finishPracticeSession: vi.fn().mockResolvedValue(undefined),
   recordPracticeAttempt: vi.fn().mockResolvedValue(undefined),
   startPracticeSession: vi.fn().mockResolvedValue("session-1"),
+  getTrainingSummary: vi.fn().mockResolvedValue({ completedSessions: 0, exercisesSolved: 0, exercisesPerTenMinutes: 0, firstTryRate: 0, minutesThisWeek: 0, totalMinutes: 0, streak: 0 }),
 }))
 
 vi.mock("@/features/auth/auth-store", () => ({

@@ -7,6 +7,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useNavigate } from "react-router-dom"
 import { previousSessions } from "./home-data"
 import { signOut, useAuth } from "@/features/auth/auth-store"
+import { getTrainingSummary } from "@/features/training/training-api"
+import { emptyTrainingSummary } from "@/features/training/training-metrics"
+import { useMountEffect } from "@/hooks/use-mount-effect"
 
 const durations = [5, 10, 15] as const
 
@@ -16,10 +19,20 @@ export function HomePage() {
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
   const [reviewId, setReviewId] = useState<number | null>(null)
+  const [summary, setSummary] = useState(emptyTrainingSummary)
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
   const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
   const initials = fullName.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase() || "NA"
+
+  useMountEffect(() => {
+    if (!user) return
+    let active = true
+    void getTrainingSummary(user.id).then((nextSummary) => {
+      if (active) setSummary(nextSummary)
+    })
+    return () => { active = false }
+  })
 
   async function logOut() {
     await signOut()
@@ -32,7 +45,7 @@ export function HomePage() {
         <div className="home-brand">
           <BrandMark href="/home" />
           <div className="home-account-actions">
-            <div className="home-streak" aria-label="14 exercise streak"><Flame aria-hidden="true" /><strong>14</strong></div>
+            <div className="home-streak" aria-label={`${summary.streak} day streak`}><Flame aria-hidden="true" /><strong>{summary.streak}</strong></div>
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
@@ -73,12 +86,12 @@ export function HomePage() {
           </section>
 
           <section className="home-metrics" aria-label="Your progress">
-            <article><Layers3 aria-hidden="true" /><div><strong>11</strong><span>Sessions completed</span></div></article>
-            <article><CheckCircle2 aria-hidden="true" /><div><strong>126</strong><span>Exercises solved</span></div></article>
-            <article><Gauge aria-hidden="true" /><div><strong>11</strong><span>Exercises per 10 min</span></div></article>
-            <article><Target aria-hidden="true" /><div><strong>82%</strong><span>First-try solve rate</span></div></article>
-            <article><Clock3 aria-hidden="true" /><div><strong>42 min</strong><span>Time this week</span></div></article>
-            <article><Clock3 aria-hidden="true" /><div><strong>2h 10m</strong><span>Total training time</span></div></article>
+            <article><Layers3 aria-hidden="true" /><div><strong>{summary.completedSessions}</strong><span>Sessions completed</span></div></article>
+            <article><CheckCircle2 aria-hidden="true" /><div><strong>{summary.exercisesSolved}</strong><span>Exercises solved</span></div></article>
+            <article><Gauge aria-hidden="true" /><div><strong>{summary.exercisesPerTenMinutes}</strong><span>Exercises per 10 min</span></div></article>
+            <article><Target aria-hidden="true" /><div><strong>{summary.firstTryRate}%</strong><span>First-try solve rate</span></div></article>
+            <article><Clock3 aria-hidden="true" /><div><strong>{formatMinutes(summary.minutesThisWeek)}</strong><span>Time this week</span></div></article>
+            <article><Clock3 aria-hidden="true" /><div><strong>{formatMinutes(summary.totalMinutes)}</strong><span>Total training time</span></div></article>
           </section>
         </div>
 
@@ -111,4 +124,11 @@ export function HomePage() {
       </Dialog>
     </main>
   )
+}
+
+function formatMinutes(minutes: number) {
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  const remainder = minutes % 60
+  return remainder ? `${hours}h ${remainder}m` : `${hours}h`
 }
