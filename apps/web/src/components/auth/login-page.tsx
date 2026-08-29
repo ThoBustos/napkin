@@ -1,6 +1,7 @@
 import { useState } from "react"
 import { BrandMark } from "@/components/brand/brand-mark"
 import { Button } from "@/components/ui/button"
+import { GoogleIcon } from "@/components/ui/google-icon"
 import { Navigate } from "react-router-dom"
 import { signInWithGoogle, useAuth } from "@/features/auth/auth-store"
 
@@ -35,7 +36,7 @@ export function LoginPage() {
 
           <div className="auth-form">
             <Button className="auth-submit google-sign-in" size="lg" type="button" onClick={submit} disabled={submitting || auth.status === "loading" || auth.status === "unconfigured"}>
-              <span aria-hidden="true">G</span>{submitting ? "Opening Google…" : "Continue with Google"}
+              <GoogleIcon />{submitting ? "Opening Google…" : "Continue with Google"}
             </Button>
             {auth.status === "unconfigured" && <p className="auth-error" role="alert">Authentication is not configured for this deployment.</p>}
             {error && <p className="auth-error" role="alert">{error}</p>}
