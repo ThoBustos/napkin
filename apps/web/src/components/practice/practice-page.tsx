@@ -60,58 +60,92 @@ function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
 function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; userId: string }) {
   const navigate = useNavigate()
   const [{ answer, checked, hint, questionIndex }, dispatch] = useReducer(trainingReducer, initialTrainingState)
-  const attemptNumber = useRef(0)
+  const attemptNumbers = useRef(new Map<string, number>())
+  const attemptsSubmitted = useRef(0)
   const questionStartedAt = useRef(0)
+  const pendingWrite = useRef<Promise<void> | null>(null)
+  const finalizing = useRef(false)
   const [saveError, setSaveError] = useState("")
-  const { clock } = useCountdown(initialSeconds)
-  const question = questions[questionIndex]
+  const [saving, setSaving] = useState(false)
+  const [finishing, setFinishing] = useState(false)
+  const question = questions[questionIndex % questions.length]
   const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) <= question.tolerance
 
   useMountEffect(() => { questionStartedAt.current = Date.now() })
 
   function leave() {
-    if (!window.confirm("Leave this session? Your current answer will not be saved.")) return
-    void finishPracticeSession(sessionId, "abandoned").finally(() => navigate("/home"))
+    const message = attemptsSubmitted.current > 0
+      ? "End this session early? Your saved answers will count toward this session."
+      : "Leave this session? No answers have been saved yet."
+    if (!window.confirm(message)) return
+    void finishSession()
   }
 
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (saving || finishing) return
     const submittedAnswer = Number(answer.replace(",", "."))
     if (!Number.isFinite(submittedAnswer)) return
-    attemptNumber.current += 1
-    dispatch({ type: "check" })
+    const nextAttemptNumber = (attemptNumbers.current.get(question.id) ?? 0) + 1
     setSaveError("")
-    void recordPracticeAttempt({
+    setSaving(true)
+    const write = recordPracticeAttempt({
       sessionId,
       questionId: question.id,
       userId,
-      attemptNumber: attemptNumber.current,
+      attemptNumber: nextAttemptNumber,
       submittedAnswer,
       isCorrect: correct,
       usedHint: hint,
       responseTimeMs: Date.now() - questionStartedAt.current,
-    }).catch(() => setSaveError("Your answer could not be saved. Check your connection and try again."))
+    })
+    pendingWrite.current = write
+    try {
+      await write
+      attemptNumbers.current.set(question.id, nextAttemptNumber)
+      attemptsSubmitted.current += 1
+      dispatch({ type: "check" })
+    } catch {
+      setSaveError("Your answer could not be saved. Check your connection and try again.")
+    } finally {
+      pendingWrite.current = null
+      setSaving(false)
+    }
   }
 
   function next() {
-    if (questionIndex === questions.length - 1) {
-      void finishPracticeSession(sessionId, "completed").finally(() => navigate("/home"))
-      return
-    }
-    attemptNumber.current = 0
     questionStartedAt.current = Date.now()
     dispatch({ type: "next" })
   }
 
+  async function finishSession() {
+    if (finalizing.current) return
+    finalizing.current = true
+    setFinishing(true)
+    setSaveError("")
+    try {
+      await pendingWrite.current?.catch(() => undefined)
+      const status = attemptsSubmitted.current > 0 ? "completed" : "abandoned"
+      await finishPracticeSession(sessionId, status)
+      navigate("/home", { replace: true })
+    } catch {
+      finalizing.current = false
+      setFinishing(false)
+      setSaveError("The session could not be finished. Check your connection and try again.")
+    }
+  }
+
+  const { clock } = useCountdown(initialSeconds, () => { void finishSession() })
+
   return (
     <main className="speed-shell">
       <div className="speed-brand"><BrandMark href="/home" /></div>
-      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")} <small>/ {questions.length}</small></strong><Flame aria-hidden="true" /><b>14</b></div>
+      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")}</strong><Flame aria-hidden="true" /><b>14</b></div>
 
       <aside className="speed-session">
         <div><Clock3 aria-hidden="true" /><span>Session left</span></div>
         <strong>{clock}</strong>
-        <button type="button" onClick={leave}>Leave session</button>
+        <button type="button" onClick={leave} disabled={finishing}>{finishing ? "Saving session…" : "Leave session"}</button>
       </aside>
 
       <form className="speed-question" onSubmit={submit}>
@@ -121,7 +155,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initi
 
         <label htmlFor="speed-answer">Your answer</label>
         <div className={`speed-answer ${checked ? correct ? "is-correct" : "is-wrong" : ""}`}>
-          <input id="speed-answer" autoFocus inputMode="decimal" value={answer} onChange={(event) => dispatch({ type: "answer", value: event.target.value })} placeholder="0" />
+          <input id="speed-answer" autoFocus inputMode="decimal" value={answer} onChange={(event) => dispatch({ type: "answer", value: event.target.value })} placeholder="0" disabled={saving || finishing} />
           <span>{question.unit}</span>
         </div>
 
@@ -130,8 +164,8 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId }: { initi
         {saveError && <p className="auth-error" role="alert">{saveError}</p>}
 
         <div className="speed-actions">
-          <Button variant="outline" size="lg" type="button" onClick={() => dispatch({ type: "hint" })} disabled={hint}><Lightbulb aria-hidden="true" /> Hint</Button>
-          {checked && correct ? <Button size="lg" type="button" onClick={next}>Next question <ArrowRight aria-hidden="true" /></Button> : <Button size="lg" type="submit" disabled={!answer}>Check answer <ArrowRight aria-hidden="true" /></Button>}
+          <Button variant="outline" size="lg" type="button" onClick={() => dispatch({ type: "hint" })} disabled={hint || saving || finishing}><Lightbulb aria-hidden="true" /> Hint</Button>
+          {checked && correct ? <Button size="lg" type="button" onClick={next} disabled={finishing}>Next question <ArrowRight aria-hidden="true" /></Button> : <Button size="lg" type="submit" disabled={!answer || saving || finishing}>{saving ? "Saving…" : "Check answer"} <ArrowRight aria-hidden="true" /></Button>}
         </div>
       </form>
     </main>

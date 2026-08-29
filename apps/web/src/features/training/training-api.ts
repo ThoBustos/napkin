@@ -57,7 +57,7 @@ interface QuestionRow {
   hint: string
 }
 
-export async function getStarterQuestions(limit = 10): Promise<TrainingQuestion[]> {
+export async function getStarterQuestions(limit = 100): Promise<TrainingQuestion[]> {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
 
   const { data, error } = await supabase
@@ -112,6 +112,7 @@ export async function finishPracticeSession(sessionId: string, status: "complete
     .from("practice_sessions")
     .update({ status, completed_at: status === "completed" ? new Date().toISOString() : null })
     .eq("id", sessionId)
+    .eq("status", "active")
   if (error) throw error
 }
 
