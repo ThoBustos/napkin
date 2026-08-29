@@ -24,6 +24,27 @@ export interface PracticeAttemptInput {
   responseTimeMs: number
 }
 
+export interface SessionQuestionReview {
+  id: string
+  prompt: string
+  unit: string
+  correctAnswer: number
+  submittedAnswer: number
+  attempts: number
+  firstTry: boolean
+  usedHint: boolean
+}
+
+export interface TrainingSessionHistory {
+  id: string
+  date: string
+  duration: string
+  solved: number
+  accuracy: string
+  averageAttempts: string
+  questions: SessionQuestionReview[]
+}
+
 interface QuestionRow {
   id: string
   category: string
@@ -114,6 +135,67 @@ export async function getTrainingSummary(userId: string) {
     sessionsResult.data as { id: string; started_at: string; completed_at: string }[],
     attemptsResult.data,
   )
+}
+
+export async function getSessionHistory(userId: string): Promise<TrainingSessionHistory[]> {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const { data, error } = await supabase
+    .from("practice_sessions")
+    .select("id, started_at, completed_at, attempts(question_id, attempt_number, submitted_answer, is_correct, used_hint, questions(id, prompt, unit, correct_answer))")
+    .eq("user_id", userId)
+    .eq("status", "completed")
+    .order("started_at", { ascending: false })
+  if (error) throw error
+
+  return (data ?? []).map(toSessionHistory)
+}
+
+interface HistoryRow {
+  id: string
+  started_at: string
+  completed_at: string
+  attempts: Array<{
+    question_id: string
+    attempt_number: number
+    submitted_answer: number
+    is_correct: boolean
+    used_hint: boolean
+    questions: { id: string; prompt: string; unit: string; correct_answer: number }[]
+  }>
+}
+
+function toSessionHistory(session: HistoryRow): TrainingSessionHistory {
+  const grouped = new Map<string, HistoryRow["attempts"]>()
+  session.attempts.forEach((attempt) => grouped.set(attempt.question_id, [...(grouped.get(attempt.question_id) ?? []), attempt]))
+  const questions = [...grouped.values()].flatMap((questionAttempts) => {
+    const ordered = [...questionAttempts].sort((a, b) => a.attempt_number - b.attempt_number)
+    const question = ordered[0]?.questions[0]
+    const finalAttempt = ordered.at(-1)
+    if (!question || !finalAttempt) return []
+    return [{
+      id: question.id,
+      prompt: question.prompt,
+      unit: question.unit,
+      correctAnswer: Number(question.correct_answer),
+      submittedAnswer: Number(finalAttempt.submitted_answer),
+      attempts: ordered.length,
+      firstTry: Boolean(ordered[0].is_correct),
+      usedHint: ordered.some((attempt) => attempt.used_hint),
+    }]
+  })
+  const firstTrySolved = questions.filter((question) => question.firstTry).length
+  const averageAttempts = questions.length ? questions.reduce((total, question) => total + question.attempts, 0) / questions.length : 0
+  const elapsedMinutes = Math.max(1, Math.round((new Date(session.completed_at).getTime() - new Date(session.started_at).getTime()) / 60_000))
+
+  return {
+    id: session.id,
+    date: new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(session.completed_at)),
+    duration: `${elapsedMinutes} min`,
+    solved: questions.length,
+    accuracy: `${questions.length ? Math.round((firstTrySolved / questions.length) * 100) : 0}%`,
+    averageAttempts: averageAttempts.toFixed(1),
+    questions,
+  }
 }
 
 function shuffle<T>(values: T[]) {

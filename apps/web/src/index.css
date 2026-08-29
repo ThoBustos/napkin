@@ -318,6 +318,11 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .review-learning strong { font-size: 13px; }
 .review-learning p { margin: 5px 0 16px; color: var(--muted); font-size: 14px; line-height: 1.45; }
 .review-learning p:last-child { margin-bottom: 0; }
+.review-learning article { display: grid; grid-template-columns: 24px 1fr; gap: 10px; padding: 14px 0; border-bottom: 1px solid var(--line); }
+.review-learning article:last-child { padding-bottom: 0; border-bottom: 0; }
+.review-learning article > span { display: grid; width: 24px; height: 24px; place-items: center; border-radius: 50%; background: var(--paper); font-size: 11px; font-weight: 800; }
+.review-learning article p { margin: 1px 0 7px; color: var(--ink); }
+.review-learning article small { display: block; margin-top: 3px; color: var(--muted); line-height: 1.35; }
 .last-session button:focus-visible, .past-session-row:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }
 
 @media (max-width: 56rem) {

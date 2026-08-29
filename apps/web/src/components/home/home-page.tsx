@@ -5,9 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useNavigate } from "react-router-dom"
-import { previousSessions } from "./home-data"
 import { signOut, useAuth } from "@/features/auth/auth-store"
-import { getTrainingSummary } from "@/features/training/training-api"
+import { getSessionHistory, getTrainingSummary, type TrainingSessionHistory } from "@/features/training/training-api"
 import { emptyTrainingSummary } from "@/features/training/training-metrics"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 
@@ -18,8 +17,9 @@ export function HomePage() {
   const { user } = useAuth()
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
-  const [reviewId, setReviewId] = useState<number | null>(null)
+  const [reviewId, setReviewId] = useState<string | null>(null)
   const [summary, setSummary] = useState(emptyTrainingSummary)
+  const [previousSessions, setPreviousSessions] = useState<TrainingSessionHistory[]>([])
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
   const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
@@ -28,8 +28,10 @@ export function HomePage() {
   useMountEffect(() => {
     if (!user) return
     let active = true
-    void getTrainingSummary(user.id).then((nextSummary) => {
-      if (active) setSummary(nextSummary)
+    void Promise.all([getTrainingSummary(user.id), getSessionHistory(user.id)]).then(([nextSummary, nextSessions]) => {
+      if (!active) return
+      setSummary(nextSummary)
+      setPreviousSessions(nextSessions)
     })
     return () => { active = false }
   })
@@ -115,9 +117,17 @@ export function HomePage() {
               <div><dt>Duration</dt><dd>{reviewSession.duration}</dd></div>
               <div><dt>Solved</dt><dd>{reviewSession.solved}</dd></div>
               <div><dt>First try</dt><dd>{reviewSession.accuracy}</dd></div>
-              <div><dt>Avg. attempts</dt><dd>{reviewSession.attempts}</dd></div>
+              <div><dt>Avg. attempts</dt><dd>{reviewSession.averageAttempts}</dd></div>
             </dl>
-            <div className="review-learning"><strong>Mental technique</strong><p>{reviewSession.technique}</p><strong>Business implication</strong><p>Faster decomposition makes the commercial driver easier to explain under pressure.</p></div>
+            <div className="review-learning">
+              <strong>Questions</strong>
+              {reviewSession.questions.map((question, index) => (
+                <article key={question.id}>
+                  <span>{index + 1}</span>
+                  <div><p>{question.prompt}</p><small>Your answer: {question.submittedAnswer} {question.unit} · Correct: {question.correctAnswer} {question.unit}</small><small>{question.firstTry ? "Correct first try" : `${question.attempts} attempts`}{question.usedHint ? " · Hint used" : ""}</small></div>
+                </article>
+              ))}
+            </div>
             <Button type="button" onClick={() => setReviewId(null)}>Close review</Button>
           </DialogContent>
         )}
