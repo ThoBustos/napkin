@@ -3,6 +3,7 @@ import { ArrowRight, Check, Clock3, Flame, Lightbulb } from "lucide-react"
 import { BrandMark } from "@/components/brand/brand-mark"
 import { ProductPreview } from "@/components/landing/product-preview"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useCountdown } from "@/hooks/use-countdown"
 import { initialTrainingState, trainingReducer } from "./training-reducer"
@@ -75,6 +76,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
   const [saveError, setSaveError] = useState("")
   const [saving, setSaving] = useState(false)
   const [finishing, setFinishing] = useState(false)
+  const [confirmingLeave, setConfirmingLeave] = useState(false)
   const question = questions[questionIndex % questions.length]
   const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) <= question.tolerance
 
@@ -85,10 +87,11 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
   })
 
   function leave() {
-    const message = attemptsSubmitted.current > 0
-      ? "End this session early? Your saved answers will count toward this session."
-      : "Leave this session? No answers have been saved yet."
-    if (!window.confirm(message)) return
+    setConfirmingLeave(true)
+  }
+
+  function confirmLeave() {
+    setConfirmingLeave(false)
     void finishSession()
   }
 
@@ -151,7 +154,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
         averageResponseSeconds: solved > 0 ? Math.round(totalResponseTimeMs.current / solved / 100) / 10 : 0,
         elapsedSeconds: Math.max(0, Math.round((Date.now() - sessionStartedAt.current) / 1000)),
       } : null
-      navigate("/home", { replace: true, state: result ? { sessionResult: result } : null })
+      navigate(result ? `/home?completed=${result.sessionId}` : "/home", { replace: true })
     } catch {
       finalizing.current = false
       setFinishing(false)
@@ -192,6 +195,19 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
           {checked && correct ? <Button size="lg" type="button" onClick={next} disabled={finishing}>Next question <ArrowRight aria-hidden="true" /></Button> : <Button size="lg" type="submit" disabled={!answer || saving || finishing}>{saving ? "Saving…" : "Check answer"} <ArrowRight aria-hidden="true" /></Button>}
         </div>
       </form>
+      <Dialog open={confirmingLeave} onOpenChange={setConfirmingLeave}>
+        <DialogContent aria-describedby="leave-session-description">
+          <span>Leave practice</span>
+          <DialogTitle asChild><h2>End this session?</h2></DialogTitle>
+          <p id="leave-session-description" className="session-result-copy">
+            {attemptsSubmitted.current > 0 ? "Your saved answers will count toward this session." : "No answers have been saved, so this session won’t count."}
+          </p>
+          <div className="session-dialog-actions">
+            <Button variant="outline" type="button" onClick={() => setConfirmingLeave(false)}>Keep training</Button>
+            <Button type="button" onClick={confirmLeave}>End session</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
