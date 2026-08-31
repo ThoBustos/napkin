@@ -7,10 +7,11 @@ const AuthCallbackPage = lazy(() => import("@/features/auth/auth-callback-page")
 const HomePage = lazy(() => import("@/components/home/home-page").then((module) => ({ default: module.HomePage })))
 const LoginPage = lazy(() => import("@/components/auth/login-page").then((module) => ({ default: module.LoginPage })))
 const PracticePage = lazy(() => import("@/components/practice/practice-page").then((module) => ({ default: module.PracticePage })))
+const SettingsPage = lazy(() => import("@/components/settings/settings-page").then((module) => ({ default: module.SettingsPage })))
 const RequireAuth = lazy(() => import("@/features/auth/require-auth").then((module) => ({ default: module.RequireAuth })))
 
 function NotFoundPage() {
-  usePageMetadata({ robots: "noindex, nofollow", title: "Page not found — Napkin" })
+  usePageMetadata({ robots: "noindex, nofollow", title: "Page not found | Napkin" })
 
   return (
     <main className="not-found">
@@ -31,6 +32,7 @@ export function AppRoutes() {
         <Route path="/auth/callback" element={<AuthCallbackPage />} />
         <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />
         <Route path="/practice" element={<RequireAuth><PracticePage /></RequireAuth>} />
+        <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Suspense>

@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase"
 import { calculateTrainingSummary } from "./training-metrics"
+import { nextWeekStartKey, weekStartKey, type WeeklyGoalPlan, type WeeklyGoalSetting, type WeeklyGoalTarget } from "./weekly-goals"
 
 export interface TrainingQuestion {
   id: string
@@ -51,6 +52,32 @@ export interface PracticeSessionResult {
   firstTryRate: number
   averageResponseSeconds: number
   elapsedSeconds: number
+}
+
+export async function getWeeklyGoalPlan(userId: string, now = new Date()): Promise<WeeklyGoalPlan> {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const { data, error } = await supabase
+    .from("weekly_goal_settings")
+    .select("effective_week, target_sessions")
+    .eq("user_id", userId)
+    .order("effective_week", { ascending: true })
+  if (error) throw error
+
+  const settings = (data ?? []).map((row) => ({ effectiveWeek: row.effective_week, target: row.target_sessions as WeeklyGoalTarget }))
+  const currentWeek = weekStartKey(now)
+  const nextWeek = nextWeekStartKey(now)
+  const current = [...settings].reverse().find((setting) => setting.effectiveWeek <= currentWeek) ?? { effectiveWeek: currentWeek, target: 3 }
+  return { current, next: settings.find((setting) => setting.effectiveWeek === nextWeek) ?? null }
+}
+
+export async function scheduleWeeklyGoal(userId: string, target: WeeklyGoalTarget, now = new Date()): Promise<WeeklyGoalSetting> {
+  if (!supabase) throw new Error("Training is not configured for this deployment.")
+  const effectiveWeek = nextWeekStartKey(now)
+  const { error } = await supabase
+    .from("weekly_goal_settings")
+    .upsert({ user_id: userId, effective_week: effectiveWeek, target_sessions: target }, { onConflict: "user_id,effective_week" })
+  if (error) throw error
+  return { effectiveWeek, target }
 }
 
 interface QuestionRow {

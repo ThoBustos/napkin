@@ -64,7 +64,7 @@ export function HomePage() {
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
+                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span><DropdownMenuItem asChild><button type="button" onClick={() => navigate("/settings")}>Settings</button></DropdownMenuItem><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
               </div>
             </DropdownMenu>
           </div>

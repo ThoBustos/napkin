@@ -84,7 +84,7 @@ export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewP
               <Button type="submit" disabled={!answer}>Check answer <ArrowRight aria-hidden="true" /></Button>
             )}
             <p id="answer-feedback" className={`answer-feedback ${result}`} role="status">
-              {result === "correct" ? `Correct — ${question.answer} ${question.unit}.` : result === "incorrect" ? question.error : "Press Enter to check."}
+              {result === "correct" ? `Correct. ${question.answer} ${question.unit}.` : result === "incorrect" ? question.error : "Press Enter to check."}
             </p>
           </div>
         </form>
