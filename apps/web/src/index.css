@@ -270,7 +270,7 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .home-account-actions { display: flex; align-items: center; gap: 18px; }
 .home-streak { display: flex; align-items: center; gap: 7px; color: var(--orange); }
 .home-streak svg { width: 19px; fill: var(--orange); }
-.home-streak strong { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 20px; }
+.home-streak strong { font-size: 15px; font-weight: 750; }
 .account-menu { z-index: 10; width: 300px; display: flex; flex-direction: column; align-items: flex-start; padding: 17px; border: 1px solid var(--line); border-radius: 12px; background: var(--paper); box-shadow: 0 16px 40px rgb(16 28 53 / 10%); }
 .account-menu strong { font-size: 15px; }
 .account-menu > span { width: 100%; margin: 3px 0 10px; overflow: hidden; color: var(--muted); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
@@ -438,6 +438,18 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .home-content { width: min(1320px, calc(100% - 48px)); }
 .home-dashboard { display: grid; grid-template-columns: 1.08fr .92fr; align-items: stretch; gap: 16px; }
 .home-dashboard .home-launcher { min-height: 430px; display: flex; flex-direction: column; justify-content: center; padding: 38px 44px; }
+.weekly-goal-section { margin-bottom: 32px; }
+.weekly-goal-section > span { display: block; margin: 0 0 9px 2px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.weekly-goal { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 30px; padding: 20px 24px; border: 1px solid var(--line); border-radius: 12px; }
+.weekly-goal > div:first-child { display: flex; min-width: 132px; flex-direction: column; gap: 7px; }
+.weekly-goal strong { color: var(--ink); font-family: var(--font-serif); font-size: 28px; font-weight: 600; line-height: 1; }
+.weekly-goal strong small { margin-left: 6px; color: var(--orange); font-family: var(--font-sans); font-size: 14px; font-weight: 800; }
+.weekly-goal .weekly-next-goal { color: var(--cobalt); font-size: 12px; font-weight: 750; }
+.weekly-goal-marks { display: flex; align-items: center; justify-content: flex-end; gap: clamp(8px, 1.2vw, 16px); }
+.weekly-goal-marks i { width: clamp(36px, 3.7vw, 54px); height: clamp(36px, 3.7vw, 54px); display: grid; flex: 0 0 auto; place-items: center; border: 2px solid var(--orange); border-radius: 50%; color: white; }
+.weekly-goal-marks i.is-complete { background: var(--orange); }
+.weekly-goal-marks svg { width: 55%; stroke-width: 3; }
+@media (max-width: 44rem) { .weekly-goal { grid-template-columns: 1fr; gap: 16px; } .weekly-goal-marks { justify-content: flex-start; } }
 .launcher-heading { display: flex; align-items: center; justify-content: space-between; gap: 22px; margin-bottom: 46px; }
 .launcher-heading .home-launcher h1, .launcher-heading h1 { margin: 0; }
 .launcher-heading > button { min-height: 44px; display: inline-flex; align-items: center; gap: 8px; padding: 0 13px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: var(--cobalt); font-weight: 700; cursor: pointer; }

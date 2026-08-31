@@ -16,7 +16,7 @@ const trainingMock = vi.hoisted(() => ({
   finishPracticeSession: vi.fn().mockResolvedValue(undefined),
   recordPracticeAttempt: vi.fn().mockResolvedValue(undefined),
   startPracticeSession: vi.fn().mockResolvedValue("session-1"),
-  getTrainingSummary: vi.fn().mockResolvedValue({ completedSessions: 0, exercisesSolved: 0, exercisesPerTenMinutes: 0, firstTryRate: 0, minutesThisWeek: 0, totalMinutes: 0, streak: 0 }),
+  getTrainingSummary: vi.fn().mockResolvedValue({ completedSessions: 0, exercisesSolved: 0, exercisesPerTenMinutes: 0, firstTryRate: 0, minutesThisWeek: 0, totalMinutes: 0, streak: 0, weeklyGoal: 3, weeklyProgress: 0, nextWeeklyGoal: null }),
   getPracticeSessionResult: vi.fn().mockResolvedValue({ sessionId: "session-1", questionsSolved: 1, firstTryRate: 100, averageResponseSeconds: 2, elapsedSeconds: 30 }),
   getWeeklyGoalPlan: vi.fn().mockResolvedValue({ current: { effectiveWeek: "2026-08-31", target: 3 }, next: null }),
   scheduleWeeklyGoal: vi.fn().mockResolvedValue({ effectiveWeek: "2026-09-07", target: 5 }),
@@ -84,10 +84,19 @@ describe("Napkin V1 flow", () => {
   })
 
   it("shows the persisted streak during practice", async () => {
-    trainingMock.getTrainingSummary.mockResolvedValueOnce({ completedSessions: 7, exercisesSolved: 20, exercisesPerTenMinutes: 10, firstTryRate: 80, minutesThisWeek: 30, totalMinutes: 70, streak: 4 })
+    trainingMock.getTrainingSummary.mockResolvedValueOnce({ completedSessions: 7, exercisesSolved: 20, exercisesPerTenMinutes: 10, firstTryRate: 80, minutesThisWeek: 30, totalMinutes: 70, streak: 4, weeklyGoal: 5, weeklyProgress: 2, nextWeeklyGoal: null })
     renderRoute("/practice?duration=10")
 
-    expect(await screen.findByLabelText("4 day streak")).toBeTruthy()
+    expect(await screen.findByLabelText("4 week streak")).toBeTruthy()
+  })
+
+  it("shows weekly goal progress on home", async () => {
+    trainingMock.getTrainingSummary.mockResolvedValueOnce({ completedSessions: 2, exercisesSolved: 8, exercisesPerTenMinutes: 8, firstTryRate: 75, minutesThisWeek: 20, totalMinutes: 20, streak: 0, weeklyGoal: 5, weeklyProgress: 2, nextWeeklyGoal: 7 })
+    renderRoute("/home")
+
+    expect(await screen.findByLabelText("2 of 5 sessions this week")).toBeTruthy()
+    expect(screen.getByText("Pro")).toBeTruthy()
+    expect(screen.getByText("Next week: 7x Athlete")).toBeTruthy()
   })
 
   it("keeps progression locked until the correct answer", async () => {

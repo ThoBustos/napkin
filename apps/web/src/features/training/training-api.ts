@@ -179,7 +179,7 @@ export async function getPracticeSessionResult(sessionId: string, userId: string
 
 export async function getTrainingSummary(userId: string) {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
-  const [sessionsResult, attemptsResult] = await Promise.all([
+  const [sessionsResult, attemptsResult, goalsResult] = await Promise.all([
     supabase
       .from("practice_sessions")
       .select("id, started_at, completed_at")
@@ -190,12 +190,18 @@ export async function getTrainingSummary(userId: string) {
       .from("attempts")
       .select("session_id, question_id, attempt_number, is_correct")
       .eq("user_id", userId),
+    supabase
+      .from("weekly_goal_settings")
+      .select("effective_week, target_sessions")
+      .eq("user_id", userId),
   ])
   if (sessionsResult.error) throw sessionsResult.error
   if (attemptsResult.error) throw attemptsResult.error
+  if (goalsResult.error) throw goalsResult.error
   return calculateTrainingSummary(
     sessionsResult.data as { id: string; started_at: string; completed_at: string }[],
     attemptsResult.data,
+    (goalsResult.data ?? []).map((goal) => ({ effectiveWeek: goal.effective_week, target: goal.target_sessions as WeeklyGoalTarget })),
   )
 }
 
