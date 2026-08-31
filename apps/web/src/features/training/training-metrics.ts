@@ -27,6 +27,8 @@ export interface TrainingSummary {
   weeklyGoal: 1 | 3 | 5 | 7
   weeklyProgress: number
   nextWeeklyGoal: 1 | 3 | 5 | 7 | null
+  weeklySessionDays: boolean[]
+  currentWeekday: number
 }
 
 export const emptyTrainingSummary: TrainingSummary = {
@@ -40,6 +42,8 @@ export const emptyTrainingSummary: TrainingSummary = {
   weeklyGoal: 3,
   weeklyProgress: 0,
   nextWeeklyGoal: null,
+  weeklySessionDays: Array.from({ length: 7 }, () => false),
+  currentWeekday: 0,
 }
 
 export function calculateTrainingSummary(sessions: CompletedSession[], attempts: AttemptMetric[], goals: GoalMetric[] = [], now = new Date()): TrainingSummary {
@@ -54,6 +58,11 @@ export function calculateTrainingSummary(sessions: CompletedSession[], attempts:
   const totalMinutes = Math.round(totalMs / 60_000)
   const weeklyGoal = goalForWeek(goals, currentWeek)
   const weeklyProgress = sessions.filter((session) => weekStartKey(new Date(session.completed_at)) === currentWeek).length
+  const weeklySessionDays = Array.from({ length: 7 }, () => false)
+  sessions.forEach((session) => {
+    const completedAt = new Date(session.completed_at)
+    if (weekStartKey(completedAt) === currentWeek) weeklySessionDays[weekdayIndex(completedAt)] = true
+  })
   const nextWeeklyGoal = goals.find((goal) => goal.effectiveWeek === shiftWeek(currentWeek, 7))?.target ?? null
 
   return {
@@ -67,7 +76,13 @@ export function calculateTrainingSummary(sessions: CompletedSession[], attempts:
     weeklyGoal,
     weeklyProgress,
     nextWeeklyGoal,
+    weeklySessionDays,
+    currentWeekday: weekdayIndex(now),
   }
+}
+
+function weekdayIndex(date: Date) {
+  return (date.getDay() + 6) % 7
 }
 
 function attemptKey(attempt: AttemptMetric) {

@@ -21,6 +21,22 @@ describe("calculateTrainingSummary", () => {
       weeklyGoal: 3,
       weeklyProgress: 1,
       nextWeeklyGoal: null,
+      weeklySessionDays: [false, false, false, false, false, true, false],
+      currentWeekday: 5,
+    })
+  })
+
+  it("marks each weekday with at least one completed session", () => {
+    const sessions = [
+      { id: "monday-1", started_at: "2026-08-24T09:00:00Z", completed_at: "2026-08-24T09:10:00Z" },
+      { id: "monday-2", started_at: "2026-08-24T12:00:00Z", completed_at: "2026-08-24T12:10:00Z" },
+      { id: "wednesday", started_at: "2026-08-26T09:00:00Z", completed_at: "2026-08-26T09:10:00Z" },
+    ]
+
+    expect(calculateTrainingSummary(sessions, [], [], new Date("2026-08-27T12:00:00Z"))).toMatchObject({
+      weeklyProgress: 3,
+      weeklySessionDays: [true, false, true, false, false, false, false],
+      currentWeekday: 3,
     })
   })
 
