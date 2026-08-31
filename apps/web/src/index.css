@@ -275,8 +275,8 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .account-menu strong { font-size: 15px; }
 .account-menu > span { width: 100%; margin: 3px 0 10px; overflow: hidden; color: var(--muted); font-size: 14px; text-overflow: ellipsis; white-space: nowrap; }
 .account-menu button { width: 100%; min-height: 40px; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: left; cursor: pointer; }
-.account-menu button:hover { color: var(--cobalt); }
-.account-menu button:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }
+.account-menu button:hover, .account-menu button[data-highlighted] { background: #f3f6ff; color: var(--cobalt); }
+.account-menu button:focus-visible { outline: none; }
 .account-menu[data-state="open"] { animation: menu-in 120ms ease-out; }
 @keyframes menu-in { from { opacity: 0; transform: translateY(-4px); } }
 .home-launcher { padding: 27px 30px; border: 1px solid var(--line); border-radius: 16px; background: var(--paper); box-shadow: none; }
