@@ -13,7 +13,7 @@ const databaseMock = vi.hoisted(() => {
     hint: "Hint",
   }
   const query = {
-    data: [row],
+    data: [row] as unknown[],
     error: null,
     select: vi.fn(),
     eq: vi.fn(),
@@ -24,15 +24,18 @@ const databaseMock = vi.hoisted(() => {
   query.eq.mockReturnValue(query)
   query.order.mockReturnValue(query)
   query.limit.mockReturnValue(query)
-  return { from: vi.fn(() => query), query }
+  return { from: vi.fn(() => query), query, row }
 })
 
 vi.mock("@/lib/supabase", () => ({ supabase: databaseMock }))
 
-import { getStarterQuestions } from "./training-api"
+import { getSessionHistory, getStarterQuestions } from "./training-api"
 
 describe("getStarterQuestions", () => {
-  beforeEach(() => vi.clearAllMocks())
+  beforeEach(() => {
+    vi.clearAllMocks()
+    databaseMock.query.data = [databaseMock.row]
+  })
 
   it("loads the 20 most recent active questions before shuffling", async () => {
     const questions = await getStarterQuestions()
@@ -43,5 +46,28 @@ describe("getStarterQuestions", () => {
     expect(databaseMock.query.order).toHaveBeenNthCalledWith(2, "id", { ascending: false })
     expect(databaseMock.query.limit).toHaveBeenCalledWith(20)
     expect(questions).toHaveLength(1)
+  })
+})
+
+describe("getSessionHistory", () => {
+  beforeEach(() => vi.clearAllMocks())
+
+  it("reads the question from a many-to-one PostgREST relation", async () => {
+    databaseMock.query.data = [{
+      id: "session-1",
+      started_at: "2026-08-31T09:00:00Z",
+      completed_at: "2026-08-31T09:10:00Z",
+      attempts: [
+        { question_id: "question-1", attempt_number: 1, submitted_answer: 10, is_correct: false, used_hint: false, questions: { id: "question-1", prompt: "Revenue question", unit: "%", correct_answer: 20 } },
+        { question_id: "question-1", attempt_number: 2, submitted_answer: 20, is_correct: true, used_hint: true, questions: { id: "question-1", prompt: "Revenue question", unit: "%", correct_answer: 20 } },
+      ],
+    }]
+
+    await expect(getSessionHistory("user-1")).resolves.toMatchObject([{
+      solved: 1,
+      accuracy: "0%",
+      averageAttempts: "2.0",
+      questions: [{ correctAnswer: 20, submittedAnswer: 20, attempts: 2, firstTry: false, usedHint: true }],
+    }])
   })
 })

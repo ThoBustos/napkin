@@ -231,7 +231,7 @@ interface HistoryRow {
     submitted_answer: number
     is_correct: boolean
     used_hint: boolean
-    questions: { id: string; prompt: string; unit: string; correct_answer: number }[]
+    questions: { id: string; prompt: string; unit: string; correct_answer: number } | { id: string; prompt: string; unit: string; correct_answer: number }[] | null
   }>
 }
 
@@ -240,7 +240,8 @@ function toSessionHistory(session: HistoryRow): TrainingSessionHistory {
   session.attempts.forEach((attempt) => grouped.set(attempt.question_id, [...(grouped.get(attempt.question_id) ?? []), attempt]))
   const questions = [...grouped.values()].flatMap((questionAttempts) => {
     const ordered = [...questionAttempts].sort((a, b) => a.attempt_number - b.attempt_number)
-    const question = ordered[0]?.questions[0]
+    const relation = ordered[0]?.questions
+    const question = Array.isArray(relation) ? relation[0] : relation
     const finalAttempt = ordered.at(-1)
     if (!question || !finalAttempt) return []
     return [{
