@@ -92,17 +92,20 @@ interface QuestionRow {
   hint: string
 }
 
-export async function getStarterQuestions(limit = 100): Promise<TrainingQuestion[]> {
+export async function getStarterQuestions(limit = 20): Promise<TrainingQuestion[]> {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
 
   const { data, error } = await supabase
     .from("questions")
     .select("id, category, difficulty, prompt, instruction, unit, correct_answer, answer_tolerance, hint")
     .eq("is_active", true)
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(limit)
 
   if (error) throw error
 
-  return shuffle(data as QuestionRow[]).slice(0, limit).map((question) => ({
+  return shuffle(data as QuestionRow[]).map((question) => ({
     id: question.id,
     category: question.category,
     difficulty: question.difficulty,

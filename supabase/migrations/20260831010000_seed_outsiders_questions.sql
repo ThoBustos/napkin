@@ -1,0 +1,233 @@
+insert into public.questions (slug, category, difficulty, prompt, instruction, unit, correct_answer, answer_tolerance, hint)
+values
+  (
+    'outsiders-gd-implied-equity-value',
+    'Capital allocation',
+    1,
+    'General Dynamics spends $1B repurchasing 30% of its shares at the same price per share. What total equity value does that price imply?',
+    'Enter the implied equity value.',
+    '$B',
+    3.33,
+    0.01,
+    'If 30% is worth $1B, divide $1B by 0.30 to value 100%.'
+  ),
+  (
+    'outsiders-gd-buyback-eps-impact',
+    'Share repurchases',
+    1,
+    'General Dynamics cancels 30% of its shares while net income remains unchanged. By what percentage does EPS increase?',
+    'Enter the percentage increase in EPS.',
+    '%',
+    42.86,
+    0.1,
+    'The remaining 70% of shares receives all the earnings. Calculate 1 divided by 0.70, then subtract 1.'
+  ),
+  (
+    'outsiders-gd-other-cash-sources',
+    'Capital allocation',
+    1,
+    'General Dynamics generates $5B in total proceeds. Divestitures contribute $2.5B. How much comes from operations and other sources?',
+    'Enter the remaining proceeds.',
+    '$B',
+    2.5,
+    0.01,
+    'Subtract divestiture proceeds from total proceeds.'
+  ),
+  (
+    'outsiders-lockheed-offer-multiple',
+    'Valuation',
+    1,
+    'In a scenario based on Lockheed''s offer, a buyer offers $1.5B for a division earning $100M annually. What earnings multiple is offered?',
+    'Enter the offer as a multiple of annual earnings.',
+    'x',
+    15,
+    0.01,
+    'Convert both figures to the same unit, then divide price by annual earnings.'
+  ),
+  (
+    'outsiders-gd-special-dividends',
+    'Dividends',
+    1,
+    'In a scenario based on General Dynamics, special dividends return 48% of a $4B equity value. How much cash is distributed?',
+    'Enter the total cash distributed.',
+    '$B',
+    1.92,
+    0.01,
+    'Multiply $4B by 48%.'
+  ),
+  (
+    'outsiders-gd-capital-remaining',
+    'Capital allocation',
+    1,
+    'General Dynamics has $5B of proceeds. It distributes $1.92B in special dividends and spends $1B on buybacks. How much remains?',
+    'Enter the remaining capital.',
+    '$B',
+    2.08,
+    0.01,
+    'Subtract both uses of cash from the $5B total.'
+  ),
+  (
+    'outsiders-gulfstream-implied-ev',
+    'Acquisitions',
+    1,
+    'General Dynamics pays $5B for Gulfstream, equal to 56% of General Dynamics'' enterprise value. What enterprise value does that imply?',
+    'Enter the implied enterprise value.',
+    '$B',
+    8.93,
+    0.01,
+    'Divide the $5B purchase price by 0.56.'
+  ),
+  (
+    'outsiders-gd-earnings-yield-23x',
+    'Valuation',
+    1,
+    'General Dynamics trades at 23 times forward earnings. What is its earnings yield?',
+    'Enter the earnings yield as a percentage.',
+    '%',
+    4.35,
+    0.05,
+    'Earnings yield is the inverse of the P/E multiple: divide 1 by 23.'
+  ),
+  (
+    'outsiders-gd-earnings-yield-16x',
+    'Valuation',
+    1,
+    'General Dynamics historically trades at 16 times earnings. What earnings yield corresponds to that multiple?',
+    'Enter the earnings yield as a percentage.',
+    '%',
+    6.25,
+    0.05,
+    'Earnings yield is 1 divided by the P/E multiple.'
+  ),
+  (
+    'outsiders-gd-earnings-yield-gap',
+    'Valuation',
+    1,
+    'A stock''s earnings yield is 6.25% at 16x earnings and 4.35% at 23x earnings. What is the difference?',
+    'Enter the difference in percentage points.',
+    'points',
+    1.9,
+    0.01,
+    'Subtract the smaller yield from the larger yield.'
+  ),
+  (
+    'outsiders-chabraja-fourfold-cagr',
+    'Compounding',
+    1,
+    'Nick Chabraja wants to quadruple General Dynamics'' share price in 10 years. What compound annual growth rate is required?',
+    'Enter the annual growth rate as a percentage.',
+    '%',
+    14.87,
+    0.1,
+    'Use CAGR = 4 raised to the power of 1/10, minus 1. Two approximate doublings in 10 years also gives a useful estimate.'
+  ),
+  (
+    'outsiders-gd-sp-relative-wealth',
+    'Benchmarking',
+    1,
+    '$1 invested in General Dynamics grows to $30 while $1 invested in the S&P 500 grows to $6. What is General Dynamics'' relative wealth multiple?',
+    'Enter the relative multiple.',
+    'x',
+    5,
+    0.01,
+    'Divide the General Dynamics ending value by the S&P 500 ending value.'
+  ),
+  (
+    'outsiders-gd-peer-relative-wealth',
+    'Benchmarking',
+    1,
+    '$1 invested in General Dynamics grows to $30 while $1 invested in its peers grows to $17. What is General Dynamics'' relative wealth multiple?',
+    'Enter the relative multiple.',
+    'x',
+    1.76,
+    0.01,
+    'Divide 30 by 17.'
+  ),
+  (
+    'outsiders-gd-headquarters-reduction',
+    'Organizational efficiency',
+    1,
+    'General Dynamics reduces corporate headquarters staffing to one-quarter of its former level. What percentage of headquarters staff was eliminated?',
+    'Enter the percentage reduction.',
+    '%',
+    75,
+    0.01,
+    'If 25% remains, subtract that from 100%.'
+  ),
+  (
+    'outsiders-gd-management-layers',
+    'Organizational efficiency',
+    1,
+    'General Dynamics reduces the management layers between its CEO and profit-center heads from four to two. What is the percentage reduction?',
+    'Enter the percentage reduction.',
+    '%',
+    50,
+    0.01,
+    'Two of the original four layers were removed.'
+  ),
+  (
+    'outsiders-gd-acquisition-pace',
+    'Acquisitions',
+    1,
+    'Nick Chabraja buys 12 small companies during his first year as CEO. What is the average number of acquisitions per month?',
+    'Enter the monthly average.',
+    'per month',
+    1,
+    0.01,
+    'Divide 12 acquisitions by 12 months.'
+  ),
+  (
+    'outsiders-gd-cagr-spread',
+    'Benchmarking',
+    1,
+    'General Dynamics delivers a 23.3% annual shareholder return while the S&P 500 delivers 8.9%. What is the annual return advantage?',
+    'Enter the difference in percentage points.',
+    'points',
+    14.4,
+    0.01,
+    'Subtract the S&P 500 return from the General Dynamics return.'
+  ),
+  (
+    'outsiders-gd-cagr-peer-spread',
+    'Benchmarking',
+    1,
+    'General Dynamics delivers a 23.3% annual return while its peers deliver 17.6%. What is the annual return advantage?',
+    'Enter the difference in percentage points.',
+    'points',
+    5.7,
+    0.01,
+    'Subtract the peer return from the General Dynamics return.'
+  ),
+  (
+    'outsiders-gulfstream-relative-size',
+    'Acquisitions',
+    1,
+    'General Dynamics has an enterprise value of $8.93B and pays $5B for Gulfstream. What percentage of its enterprise value is the purchase price?',
+    'Enter the purchase price as a percentage of enterprise value.',
+    '%',
+    55.99,
+    0.1,
+    'Divide $5B by $8.93B, then multiply by 100.'
+  ),
+  (
+    'outsiders-gd-buyback-share-base',
+    'Share repurchases',
+    1,
+    'General Dynamics has 100M shares and repurchases 30% of them. How many shares remain after the repurchased shares are cancelled?',
+    'Enter the remaining share count.',
+    'M shares',
+    70,
+    0.01,
+    'Keep 70% of the original 100M shares.'
+  )
+on conflict (slug) do update set
+  category = excluded.category,
+  difficulty = excluded.difficulty,
+  prompt = excluded.prompt,
+  instruction = excluded.instruction,
+  unit = excluded.unit,
+  correct_answer = excluded.correct_answer,
+  answer_tolerance = excluded.answer_tolerance,
+  hint = excluded.hint,
+  is_active = true,
+  updated_at = now();
