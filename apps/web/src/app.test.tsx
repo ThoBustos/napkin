@@ -18,6 +18,8 @@ const trainingMock = vi.hoisted(() => ({
   startPracticeSession: vi.fn().mockResolvedValue("session-1"),
   getTrainingSummary: vi.fn().mockResolvedValue({ completedSessions: 0, exercisesSolved: 0, exercisesPerTenMinutes: 0, firstTryRate: 0, minutesThisWeek: 0, totalMinutes: 0, streak: 0 }),
   getPracticeSessionResult: vi.fn().mockResolvedValue({ sessionId: "session-1", questionsSolved: 1, firstTryRate: 100, averageResponseSeconds: 2, elapsedSeconds: 30 }),
+  getWeeklyGoalPlan: vi.fn().mockResolvedValue({ current: { effectiveWeek: "2026-08-31", target: 3 }, next: null }),
+  scheduleWeeklyGoal: vi.fn().mockResolvedValue({ effectiveWeek: "2026-09-07", target: 5 }),
   getSessionHistory: vi.fn().mockResolvedValue([{ id: "history-1", date: "Aug 29", duration: "10 min", solved: 2, accuracy: "50%", averageAttempts: "1.5", questions: [{ id: "growth", prompt: "Revenue grows 25%.", unit: "€M", correctAnswer: 18.75, submittedAnswer: 18.75, attempts: 1, firstTry: true, usedHint: false }] }]),
 }))
 
@@ -196,5 +198,23 @@ describe("Napkin V1 flow", () => {
     await user.click(screen.getByRole("menuitem", { name: "Log out" }))
 
     expect(authMock.signOut).toHaveBeenCalledOnce()
+  })
+
+  it("schedules a new weekly goal from settings", async () => {
+    const user = userEvent.setup()
+    renderRoute("/settings")
+
+    await user.click(await screen.findByRole("radio", { name: /pro.*5x/i }))
+    await user.click(screen.getByRole("button", { name: "Schedule" }))
+
+    expect(trainingMock.scheduleWeeklyGoal).toHaveBeenCalledWith("user-1", 5)
+    expect(await screen.findByText("Next week")).toBeTruthy()
+  })
+
+  it("does not reschedule the current weekly goal", async () => {
+    renderRoute("/settings")
+
+    expect(await screen.findByText("This week")).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Schedule" }).hasAttribute("disabled")).toBe(true)
   })
 })

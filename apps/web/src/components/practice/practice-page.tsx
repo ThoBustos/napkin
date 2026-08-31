@@ -187,7 +187,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
         </div>
 
         {hint && <div className="speed-hint"><Lightbulb aria-hidden="true" /><span>{question.hint}</span></div>}
-        {checked && <div className={`speed-feedback ${correct ? "is-correct" : "is-wrong"}`} role="status">{correct && <Check aria-hidden="true" />}<span>{correct ? `Correct — ${question.answer} ${question.unit}.` : "Not yet. Use the hint and try again."}</span></div>}
+        {checked && <div className={`speed-feedback ${correct ? "is-correct" : "is-wrong"}`} role="status">{correct && <Check aria-hidden="true" />}<span>{correct ? `Correct. ${question.answer} ${question.unit}.` : "Not yet. Use the hint and try again."}</span></div>}
         {saveError && <p className="auth-error" role="alert">{saveError}</p>}
 
         <div className="speed-actions">
