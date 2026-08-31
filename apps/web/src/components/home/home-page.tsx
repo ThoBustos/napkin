@@ -1,9 +1,10 @@
 import { useState } from "react"
-import { ArrowRight, Check, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target } from "lucide-react"
+import { ArrowRight, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target, Trophy } from "lucide-react"
 import { BrandMark } from "@/components/brand/brand-mark"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { WeekdayProgress } from "@/components/ui/weekday-progress"
 import { useLocation, useNavigate } from "react-router-dom"
 import { signOut, useAuth } from "@/features/auth/auth-store"
 import { getPracticeSessionResult, getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
@@ -80,8 +81,8 @@ export function HomePage() {
             <div className="weekly-goal-section">
               <span>This week</span>
               <div className="weekly-goal" aria-label={`${summary.weeklyProgress} of ${summary.weeklyGoal} sessions this week`}>
-                <div><strong>{Math.min(summary.weeklyProgress, summary.weeklyGoal)}/{summary.weeklyGoal} <small>{tierForTarget(summary.weeklyGoal)}</small></strong>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
-                <div className="weekly-goal-marks" aria-hidden="true">{Array.from({ length: summary.weeklyGoal }, (_, index) => <i className={index < summary.weeklyProgress ? "is-complete" : ""} key={index}>{index < summary.weeklyProgress && <Check />}</i>)}</div>
+                <div className="weekly-goal-summary"><div className="weekly-goal-tier"><Trophy aria-hidden="true" /><b>{tierForTarget(summary.weeklyGoal)}</b></div><strong>{Math.min(summary.weeklyProgress, summary.weeklyGoal)}/{summary.weeklyGoal}</strong>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
+                <WeekdayProgress completedDays={summary.weeklySessionDays ?? emptyTrainingSummary.weeklySessionDays} currentDay={summary.currentWeekday ?? emptyTrainingSummary.currentWeekday} />
               </div>
             </div>
             <div className="duration-line">
