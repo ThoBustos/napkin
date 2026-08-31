@@ -40,6 +40,11 @@ vi.mock("@/features/training/training-api", () => ({
   ]),
 }))
 
+vi.mock("@/features/training/session-sounds", () => ({
+  playSessionLaunchSound: vi.fn(),
+  sessionSoundPaths: { launch: "/audio/session-launch.mp3", complete: "/audio/session-complete.mp3" },
+}))
+
 beforeEach(() => {
   authMock.status = "authenticated"
   vi.clearAllMocks()

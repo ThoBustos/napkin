@@ -9,6 +9,7 @@ import { useCountdown } from "@/hooks/use-countdown"
 import { initialTrainingState, trainingReducer } from "./training-reducer"
 import { finishPracticeSession, getStarterQuestions, getTrainingSummary, recordPracticeAttempt, startPracticeSession, type PracticeSessionResult, type TrainingQuestion } from "@/features/training/training-api"
 import { useMountEffect } from "@/hooks/use-mount-effect"
+import { useSessionAlarm } from "@/hooks/use-session-alarm"
 import { useAuth } from "@/features/auth/auth-store"
 
 export function PracticePage() {
@@ -77,6 +78,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
   const [saving, setSaving] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [confirmingLeave, setConfirmingLeave] = useState(false)
+  const { playAlarm, primeAlarm } = useSessionAlarm()
   const question = questions[questionIndex % questions.length]
   const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) <= question.tolerance
 
@@ -162,10 +164,10 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
     }
   }
 
-  const { clock } = useCountdown(initialSeconds, () => { void finishSession() })
+  const { clock } = useCountdown(initialSeconds, () => { playAlarm(); void finishSession() })
 
   return (
-    <main className="speed-shell">
+    <main className="speed-shell" onPointerDown={primeAlarm}>
       <div className="speed-brand"><BrandMark href="/home" /></div>
       <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")}</strong><Flame aria-hidden="true" /><b aria-label={`${streak} week streak`}>{streak}</b></div>
 

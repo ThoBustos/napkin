@@ -10,6 +10,7 @@ import { signOut, useAuth } from "@/features/auth/auth-store"
 import { getPracticeSessionResult, getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
 import { emptyTrainingSummary } from "@/features/training/training-metrics"
 import { tierForTarget } from "@/features/training/weekly-goals"
+import { playSessionLaunchSound } from "@/features/training/session-sounds"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 
 const durations = [5, 10, 15] as const
@@ -56,6 +57,11 @@ export function HomePage() {
     navigate(location.pathname, { replace: true })
   }
 
+  function startTraining(minutes: number) {
+    playSessionLaunchSound()
+    navigate(`/practice?duration=${minutes}`)
+  }
+
   return (
     <main className="home-shell">
       <div className="home-content">
@@ -76,7 +82,7 @@ export function HomePage() {
           <section className="home-launcher" aria-labelledby="session-title">
             <div className="launcher-heading">
               <h1 id="session-title">Ready to train?</h1>
-              <button type="button" onClick={() => navigate("/practice?duration=10")}>Quick start <ArrowRight aria-hidden="true" /></button>
+              <button type="button" onClick={() => startTraining(10)}>Quick start <ArrowRight aria-hidden="true" /></button>
             </div>
             <div className="weekly-goal-section">
               <span>This week</span>
@@ -104,7 +110,7 @@ export function HomePage() {
                 )}
               </div>
             </div>
-            <Button className="home-start" size="lg" type="button" onClick={() => navigate(`/practice?duration=${selectedDuration}`)}>
+            <Button className="home-start" size="lg" type="button" onClick={() => startTraining(selectedDuration)}>
               Start training <ArrowRight aria-hidden="true" />
             </Button>
           </section>
