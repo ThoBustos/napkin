@@ -11,6 +11,11 @@ interface AttemptMetric {
   is_correct: boolean
 }
 
+interface GoalMetric {
+  effectiveWeek: string
+  target: 1 | 3 | 5 | 7
+}
+
 export interface TrainingSummary {
   completedSessions: number
   exercisesSolved: number
@@ -19,6 +24,9 @@ export interface TrainingSummary {
   minutesThisWeek: number
   totalMinutes: number
   streak: number
+  weeklyGoal: 1 | 3 | 5 | 7
+  weeklyProgress: number
+  nextWeeklyGoal: 1 | 3 | 5 | 7 | null
 }
 
 export const emptyTrainingSummary: TrainingSummary = {
@@ -29,18 +37,24 @@ export const emptyTrainingSummary: TrainingSummary = {
   minutesThisWeek: 0,
   totalMinutes: 0,
   streak: 0,
+  weeklyGoal: 3,
+  weeklyProgress: 0,
+  nextWeeklyGoal: null,
 }
 
-export function calculateTrainingSummary(sessions: CompletedSession[], attempts: AttemptMetric[], now = new Date()): TrainingSummary {
+export function calculateTrainingSummary(sessions: CompletedSession[], attempts: AttemptMetric[], goals: GoalMetric[] = [], now = new Date()): TrainingSummary {
   const completedIds = new Set(sessions.map((session) => session.id))
   const completedAttempts = attempts.filter((attempt) => completedIds.has(attempt.session_id))
   const solvedKeys = new Set(completedAttempts.filter((attempt) => attempt.is_correct).map(attemptKey))
   const attemptedKeys = new Set(completedAttempts.map(attemptKey))
   const firstTrySolved = new Set(completedAttempts.filter((attempt) => attempt.attempt_number === 1 && attempt.is_correct).map(attemptKey))
-  const weekStart = startOfWeek(now).getTime()
+  const currentWeek = weekStartKey(now)
   const totalMs = sessions.reduce((total, session) => total + elapsedMs(session), 0)
-  const weekMs = sessions.reduce((total, session) => new Date(session.completed_at).getTime() >= weekStart ? total + elapsedMs(session) : total, 0)
+  const weekMs = sessions.reduce((total, session) => weekStartKey(new Date(session.completed_at)) === currentWeek ? total + elapsedMs(session) : total, 0)
   const totalMinutes = Math.round(totalMs / 60_000)
+  const weeklyGoal = goalForWeek(goals, currentWeek)
+  const weeklyProgress = sessions.filter((session) => weekStartKey(new Date(session.completed_at)) === currentWeek).length
+  const nextWeeklyGoal = goals.find((goal) => goal.effectiveWeek === shiftWeek(currentWeek, 7))?.target ?? null
 
   return {
     completedSessions: sessions.length,
@@ -49,7 +63,10 @@ export function calculateTrainingSummary(sessions: CompletedSession[], attempts:
     firstTryRate: attemptedKeys.size > 0 ? Math.round((firstTrySolved.size / attemptedKeys.size) * 100) : 0,
     minutesThisWeek: Math.round(weekMs / 60_000),
     totalMinutes,
-    streak: calculateStreak(sessions, now),
+    streak: calculateWeeklyStreak(sessions, goals, now),
+    weeklyGoal,
+    weeklyProgress,
+    nextWeeklyGoal,
   }
 }
 
@@ -61,25 +78,37 @@ function elapsedMs(session: CompletedSession) {
   return Math.max(0, new Date(session.completed_at).getTime() - new Date(session.started_at).getTime())
 }
 
-function startOfWeek(date: Date) {
-  const start = new Date(date)
+function weekStartKey(date: Date) {
+  const start = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
   const day = start.getUTCDay()
   start.setUTCDate(start.getUTCDate() - (day === 0 ? 6 : day - 1))
-  start.setUTCHours(0, 0, 0, 0)
-  return start
+  return start.toISOString().slice(0, 10)
 }
 
-function calculateStreak(sessions: CompletedSession[], now: Date) {
-  const days = new Set(sessions.map((session) => new Date(session.completed_at).toISOString().slice(0, 10)))
-  const cursor = new Date(now)
-  cursor.setUTCHours(0, 0, 0, 0)
-  const today = cursor.toISOString().slice(0, 10)
-  if (!days.has(today)) cursor.setUTCDate(cursor.getUTCDate() - 1)
+function goalForWeek(goals: GoalMetric[], week: string): 1 | 3 | 5 | 7 {
+  return [...goals].sort((a, b) => b.effectiveWeek.localeCompare(a.effectiveWeek)).find((goal) => goal.effectiveWeek <= week)?.target ?? 3
+}
+
+function shiftWeek(week: string, days: number) {
+  const shifted = new Date(`${week}T00:00:00Z`)
+  shifted.setUTCDate(shifted.getUTCDate() + days)
+  return shifted.toISOString().slice(0, 10)
+}
+
+function calculateWeeklyStreak(sessions: CompletedSession[], goals: GoalMetric[], now: Date) {
+  const sessionsByWeek = new Map<string, number>()
+  sessions.forEach((session) => {
+    const week = weekStartKey(new Date(session.completed_at))
+    sessionsByWeek.set(week, (sessionsByWeek.get(week) ?? 0) + 1)
+  })
+  const cursor = new Date(`${weekStartKey(now)}T00:00:00Z`)
+  const currentWeek = weekStartKey(now)
+  if ((sessionsByWeek.get(currentWeek) ?? 0) < goalForWeek(goals, currentWeek)) cursor.setUTCDate(cursor.getUTCDate() - 7)
 
   let streak = 0
-  while (days.has(cursor.toISOString().slice(0, 10))) {
+  while ((sessionsByWeek.get(cursor.toISOString().slice(0, 10)) ?? 0) >= goalForWeek(goals, cursor.toISOString().slice(0, 10))) {
     streak += 1
-    cursor.setUTCDate(cursor.getUTCDate() - 1)
+    cursor.setUTCDate(cursor.getUTCDate() - 7)
   }
   return streak
 }

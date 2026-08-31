@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { ArrowRight, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target } from "lucide-react"
+import { ArrowRight, Check, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target } from "lucide-react"
 import { BrandMark } from "@/components/brand/brand-mark"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
@@ -8,6 +8,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { signOut, useAuth } from "@/features/auth/auth-store"
 import { getPracticeSessionResult, getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
 import { emptyTrainingSummary } from "@/features/training/training-metrics"
+import { tierForTarget } from "@/features/training/weekly-goals"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 
 const durations = [5, 10, 15] as const
@@ -60,7 +61,7 @@ export function HomePage() {
         <div className="home-brand">
           <BrandMark href="/home" />
           <div className="home-account-actions">
-            <div className="home-streak" aria-label={`${summary.streak} day streak`}><Flame aria-hidden="true" /><strong>{summary.streak}</strong></div>
+            <div className="home-streak" aria-label={`${summary.streak} week streak`}><Flame aria-hidden="true" /><strong>{summary.streak} week streak</strong></div>
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
@@ -74,7 +75,14 @@ export function HomePage() {
           <section className="home-launcher" aria-labelledby="session-title">
             <div className="launcher-heading">
               <h1 id="session-title">Ready to train?</h1>
-              <button type="button" onClick={() => navigate("/practice?duration=10")}>Quick start <span>10 min</span><ArrowRight aria-hidden="true" /></button>
+              <button type="button" onClick={() => navigate("/practice?duration=10")}>Quick start <ArrowRight aria-hidden="true" /></button>
+            </div>
+            <div className="weekly-goal-section">
+              <span>This week</span>
+              <div className="weekly-goal" aria-label={`${summary.weeklyProgress} of ${summary.weeklyGoal} sessions this week`}>
+                <div><strong>{Math.min(summary.weeklyProgress, summary.weeklyGoal)}/{summary.weeklyGoal} <small>{tierForTarget(summary.weeklyGoal)}</small></strong>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
+                <div className="weekly-goal-marks" aria-hidden="true">{Array.from({ length: summary.weeklyGoal }, (_, index) => <i className={index < summary.weeklyProgress ? "is-complete" : ""} key={index}>{index < summary.weeklyProgress && <Check />}</i>)}</div>
+              </div>
             </div>
             <div className="duration-line">
               <span>Duration</span>

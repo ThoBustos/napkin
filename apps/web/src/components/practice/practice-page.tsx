@@ -167,7 +167,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
   return (
     <main className="speed-shell">
       <div className="speed-brand"><BrandMark href="/home" /></div>
-      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")}</strong><Flame aria-hidden="true" /><b aria-label={`${streak} day streak`}>{streak}</b></div>
+      <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")}</strong><Flame aria-hidden="true" /><b aria-label={`${streak} week streak`}>{streak}</b></div>
 
       <aside className="speed-session">
         <div><Clock3 aria-hidden="true" /><span>Session left</span></div>
