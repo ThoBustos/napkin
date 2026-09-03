@@ -12,6 +12,7 @@ import { emptyTrainingSummary } from "@/features/training/training-metrics"
 import { tierForTarget } from "@/features/training/weekly-goals"
 import { playSessionLaunchSound } from "@/features/training/session-sounds"
 import { useMountEffect } from "@/hooks/use-mount-effect"
+import { useQuery } from "@tanstack/react-query"
 
 const durations = [5, 10, 15] as const
 
@@ -22,10 +23,22 @@ export function HomePage() {
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
   const [reviewId, setReviewId] = useState<string | null>(null)
-  const [summary, setSummary] = useState(emptyTrainingSummary)
-  const [previousSessions, setPreviousSessions] = useState<TrainingSessionHistory[]>([])
   const [sessionResult, setSessionResult] = useState<PracticeSessionResult | null>(null)
   const completedSessionId = new URLSearchParams(location.search).get("completed")
+  const summaryQuery = useQuery({
+    queryKey: ["training-summary", user?.id],
+    queryFn: () => getTrainingSummary(user!.id),
+    enabled: Boolean(user),
+    refetchOnMount: "always",
+  })
+  const historyQuery = useQuery({
+    queryKey: ["session-history", user?.id],
+    queryFn: () => getSessionHistory(user!.id),
+    enabled: Boolean(user),
+    refetchOnMount: "always",
+  })
+  const summary = summaryQuery.data ?? emptyTrainingSummary
+  const previousSessions: TrainingSessionHistory[] = historyQuery.data ?? []
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
   const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
@@ -34,11 +47,6 @@ export function HomePage() {
   useMountEffect(() => {
     if (!user) return
     let active = true
-    void Promise.all([getTrainingSummary(user.id), getSessionHistory(user.id)]).then(([nextSummary, nextSessions]) => {
-      if (!active) return
-      setSummary(nextSummary)
-      setPreviousSessions(nextSessions)
-    })
     if (completedSessionId) {
       void getPracticeSessionResult(completedSessionId, user.id).then((result) => {
         if (active) setSessionResult(result)
@@ -124,6 +132,13 @@ export function HomePage() {
             <article><Clock3 aria-hidden="true" /><div><strong>{formatMinutes(summary.totalMinutes)}</strong><span>Total training time</span></div></article>
           </section>
         </div>
+
+        {(summaryQuery.isError || historyQuery.isError) && (
+          <div className="dashboard-refresh-error" role="alert">
+            <span>Some dashboard data could not be refreshed. Showing the latest available data.</span>
+            <button type="button" onClick={() => { void summaryQuery.refetch(); void historyQuery.refetch() }}>Retry</button>
+          </div>
+        )}
 
         <div className="home-history">
           <section className="past-sessions" aria-labelledby="past-sessions-title">

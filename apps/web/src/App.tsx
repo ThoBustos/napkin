@@ -1,7 +1,9 @@
 import { LandingPage } from "@/components/landing/landing-page"
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import { usePageMetadata } from "@/hooks/use-page-metadata"
-import { lazy, Suspense } from "react"
+import { lazy, Suspense, useState } from "react"
+import { QueryClientProvider } from "@tanstack/react-query"
+import { createQueryClient } from "@/lib/query-client"
 
 const AuthCallbackPage = lazy(() => import("@/features/auth/auth-callback-page").then((module) => ({ default: module.AuthCallbackPage })))
 const HomePage = lazy(() => import("@/components/home/home-page").then((module) => ({ default: module.HomePage })))
@@ -24,18 +26,22 @@ function NotFoundPage() {
 }
 
 export function AppRoutes() {
+  const [queryClient] = useState(createQueryClient)
+
   return (
-    <Suspense fallback={<main className="auth-status" aria-live="polite">Loading Napkin…</main>}>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/auth/callback" element={<AuthCallbackPage />} />
-        <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />
-        <Route path="/practice" element={<RequireAuth><PracticePage /></RequireAuth>} />
-        <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
-    </Suspense>
+    <QueryClientProvider client={queryClient}>
+      <Suspense fallback={<main className="auth-status" aria-live="polite">Loading Napkin…</main>}>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
+          <Route path="/home" element={<RequireAuth><HomePage /></RequireAuth>} />
+          <Route path="/practice" element={<RequireAuth><PracticePage /></RequireAuth>} />
+          <Route path="/settings" element={<RequireAuth><SettingsPage /></RequireAuth>} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Routes>
+      </Suspense>
+    </QueryClientProvider>
   )
 }
 
