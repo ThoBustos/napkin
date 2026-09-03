@@ -99,7 +99,7 @@ describe("Napkin V1 flow", () => {
     trainingMock.getTrainingSummary.mockResolvedValueOnce({ completedSessions: 2, exercisesSolved: 8, exercisesPerTenMinutes: 8, firstTryRate: 75, minutesThisWeek: 20, totalMinutes: 20, streak: 0, weeklyGoal: 5, weeklyProgress: 2, nextWeeklyGoal: 7 })
     renderRoute("/home")
 
-    expect(await screen.findByLabelText("2 of 5 sessions this week")).toBeTruthy()
+    expect(await screen.findByLabelText("2 of 5 active days this week")).toBeTruthy()
     expect(screen.getByText("Pro")).toBeTruthy()
     expect(screen.getByText("Next week: 7x Athlete")).toBeTruthy()
   })

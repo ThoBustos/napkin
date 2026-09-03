@@ -57,12 +57,12 @@ export function calculateTrainingSummary(sessions: CompletedSession[], attempts:
   const weekMs = sessions.reduce((total, session) => weekStartKey(new Date(session.completed_at)) === currentWeek ? total + elapsedMs(session) : total, 0)
   const totalMinutes = Math.round(totalMs / 60_000)
   const weeklyGoal = goalForWeek(goals, currentWeek)
-  const weeklyProgress = sessions.filter((session) => weekStartKey(new Date(session.completed_at)) === currentWeek).length
   const weeklySessionDays = Array.from({ length: 7 }, () => false)
   sessions.forEach((session) => {
     const completedAt = new Date(session.completed_at)
     if (weekStartKey(completedAt) === currentWeek) weeklySessionDays[weekdayIndex(completedAt)] = true
   })
+  const weeklyProgress = weeklySessionDays.filter(Boolean).length
   const nextWeeklyGoal = goals.find((goal) => goal.effectiveWeek === shiftWeek(currentWeek, 7))?.target ?? null
 
   return {
@@ -111,17 +111,20 @@ function shiftWeek(week: string, days: number) {
 }
 
 function calculateWeeklyStreak(sessions: CompletedSession[], goals: GoalMetric[], now: Date) {
-  const sessionsByWeek = new Map<string, number>()
+  const sessionDaysByWeek = new Map<string, Set<number>>()
   sessions.forEach((session) => {
-    const week = weekStartKey(new Date(session.completed_at))
-    sessionsByWeek.set(week, (sessionsByWeek.get(week) ?? 0) + 1)
+    const completedAt = new Date(session.completed_at)
+    const week = weekStartKey(completedAt)
+    const days = sessionDaysByWeek.get(week) ?? new Set<number>()
+    days.add(weekdayIndex(completedAt))
+    sessionDaysByWeek.set(week, days)
   })
   const cursor = new Date(`${weekStartKey(now)}T00:00:00Z`)
   const currentWeek = weekStartKey(now)
-  if ((sessionsByWeek.get(currentWeek) ?? 0) < goalForWeek(goals, currentWeek)) cursor.setUTCDate(cursor.getUTCDate() - 7)
+  if ((sessionDaysByWeek.get(currentWeek)?.size ?? 0) < goalForWeek(goals, currentWeek)) cursor.setUTCDate(cursor.getUTCDate() - 7)
 
   let streak = 0
-  while ((sessionsByWeek.get(cursor.toISOString().slice(0, 10)) ?? 0) >= goalForWeek(goals, cursor.toISOString().slice(0, 10))) {
+  while ((sessionDaysByWeek.get(cursor.toISOString().slice(0, 10))?.size ?? 0) >= goalForWeek(goals, cursor.toISOString().slice(0, 10))) {
     streak += 1
     cursor.setUTCDate(cursor.getUTCDate() - 7)
   }
