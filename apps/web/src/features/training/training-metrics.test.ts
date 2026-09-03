@@ -34,9 +34,21 @@ describe("calculateTrainingSummary", () => {
     ]
 
     expect(calculateTrainingSummary(sessions, [], [], new Date("2026-08-27T12:00:00Z"))).toMatchObject({
-      weeklyProgress: 3,
+      weeklyProgress: 2,
       weeklySessionDays: [true, false, true, false, false, false, false],
       currentWeekday: 3,
+    })
+  })
+
+  it("requires distinct active days to qualify for a weekly streak", () => {
+    const sessions = [9, 12, 15].map((hour, index) => ({
+      id: `monday-${index}`,
+      started_at: `2026-08-24T${String(hour).padStart(2, "0")}:00:00Z`,
+      completed_at: `2026-08-24T${String(hour).padStart(2, "0")}:10:00Z`,
+    }))
+
+    expect(calculateTrainingSummary(sessions, [], [], new Date("2026-08-31T12:00:00Z"))).toMatchObject({
+      streak: 0,
     })
   })
 

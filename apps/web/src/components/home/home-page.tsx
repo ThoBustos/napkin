@@ -86,7 +86,7 @@ export function HomePage() {
             </div>
             <div className="weekly-goal-section">
               <span>This week</span>
-              <div className="weekly-goal" aria-label={`${summary.weeklyProgress} of ${summary.weeklyGoal} sessions this week`}>
+              <div className="weekly-goal" aria-label={`${summary.weeklyProgress} of ${summary.weeklyGoal} active days this week`}>
                 <div className="weekly-goal-summary"><div className="weekly-goal-tier"><Trophy aria-hidden="true" /><b>{tierForTarget(summary.weeklyGoal)}</b></div><strong>{Math.min(summary.weeklyProgress, summary.weeklyGoal)}/{summary.weeklyGoal}</strong>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
                 <WeekdayProgress completedDays={summary.weeklySessionDays ?? emptyTrainingSummary.weeklySessionDays} currentDay={summary.currentWeekday ?? emptyTrainingSummary.currentWeekday} />
               </div>
