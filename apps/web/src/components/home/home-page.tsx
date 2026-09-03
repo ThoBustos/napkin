@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { WeekdayProgress } from "@/components/ui/weekday-progress"
+import { Skeleton } from "@/components/ui/skeleton"
 import { useLocation, useNavigate } from "react-router-dom"
 import { signOut, useAuth } from "@/features/auth/auth-store"
 import { getPracticeSessionResult, getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
@@ -39,6 +40,8 @@ export function HomePage() {
   })
   const summary = summaryQuery.data ?? emptyTrainingSummary
   const previousSessions: TrainingSessionHistory[] = historyQuery.data ?? []
+  const isSummaryLoading = summaryQuery.isPending
+  const isHistoryLoading = historyQuery.isPending
   const selectedDuration = duration === "custom" ? customDuration : duration
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
   const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
@@ -76,7 +79,7 @@ export function HomePage() {
         <div className="home-brand">
           <BrandMark href="/home" />
           <div className="home-account-actions">
-            <div className="home-streak" aria-label={`${summary.streak} week streak`}><Flame aria-hidden="true" /><strong>{summary.streak} week streak</strong></div>
+            {isSummaryLoading ? <div className="home-streak" aria-busy="true"><Flame aria-hidden="true" /><Skeleton className="skeleton-streak" /><span className="sr-only">Loading weekly streak</span></div> : <div className="home-streak" aria-label={`${summary.streak} week streak`}><Flame aria-hidden="true" /><strong>{summary.streak} week streak</strong></div>}
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
@@ -94,10 +97,12 @@ export function HomePage() {
             </div>
             <div className="weekly-goal-section">
               <span>This week</span>
-              <div className="weekly-goal" aria-label={`${summary.weeklyProgress} of ${summary.weeklyGoal} active days this week`}>
-                <div className="weekly-goal-summary"><div className="weekly-goal-tier"><Trophy aria-hidden="true" /><b>{tierForTarget(summary.weeklyGoal)}</b></div><strong>{Math.min(summary.weeklyProgress, summary.weeklyGoal)}/{summary.weeklyGoal}</strong>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
-                <WeekdayProgress completedDays={summary.weeklySessionDays ?? emptyTrainingSummary.weeklySessionDays} currentDay={summary.currentWeekday ?? emptyTrainingSummary.currentWeekday} />
-              </div>
+              {isSummaryLoading ? <WeeklyGoalSkeleton /> : (
+                <div className="weekly-goal" aria-label={`${summary.weeklyProgress} of ${summary.weeklyGoal} active days this week`}>
+                  <div className="weekly-goal-summary"><div className="weekly-goal-tier"><Trophy aria-hidden="true" /><b>{tierForTarget(summary.weeklyGoal)}</b></div><strong>{Math.min(summary.weeklyProgress, summary.weeklyGoal)}/{summary.weeklyGoal}</strong>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
+                  <WeekdayProgress completedDays={summary.weeklySessionDays ?? emptyTrainingSummary.weeklySessionDays} currentDay={summary.currentWeekday ?? emptyTrainingSummary.currentWeekday} />
+                </div>
+              )}
             </div>
             <div className="duration-line">
               <span>Duration</span>
@@ -123,13 +128,15 @@ export function HomePage() {
             </Button>
           </section>
 
-          <section className="home-metrics" aria-label="Your progress">
-            <article><Layers3 aria-hidden="true" /><div><strong>{summary.completedSessions}</strong><span>Sessions completed</span></div></article>
-            <article><CheckCircle2 aria-hidden="true" /><div><strong>{summary.exercisesSolved}</strong><span>Exercises solved</span></div></article>
-            <article><Gauge aria-hidden="true" /><div><strong>{summary.exercisesPerTenMinutes}</strong><span>Exercises per 10 min</span></div></article>
-            <article><Target aria-hidden="true" /><div><strong>{summary.firstTryRate}%</strong><span>First-try solve rate</span></div></article>
-            <article><Clock3 aria-hidden="true" /><div><strong>{formatMinutes(summary.minutesThisWeek)}</strong><span>Time this week</span></div></article>
-            <article><Clock3 aria-hidden="true" /><div><strong>{formatMinutes(summary.totalMinutes)}</strong><span>Total training time</span></div></article>
+          <section className="home-metrics" aria-label="Your progress" aria-busy={isSummaryLoading}>
+            {isSummaryLoading ? <MetricsSkeleton /> : <>
+              <article><Layers3 aria-hidden="true" /><div><strong>{summary.completedSessions}</strong><span>Sessions completed</span></div></article>
+              <article><CheckCircle2 aria-hidden="true" /><div><strong>{summary.exercisesSolved}</strong><span>Exercises solved</span></div></article>
+              <article><Gauge aria-hidden="true" /><div><strong>{summary.exercisesPerTenMinutes}</strong><span>Exercises per 10 min</span></div></article>
+              <article><Target aria-hidden="true" /><div><strong>{summary.firstTryRate}%</strong><span>First-try solve rate</span></div></article>
+              <article><Clock3 aria-hidden="true" /><div><strong>{formatMinutes(summary.minutesThisWeek)}</strong><span>Time this week</span></div></article>
+              <article><Clock3 aria-hidden="true" /><div><strong>{formatMinutes(summary.totalMinutes)}</strong><span>Total training time</span></div></article>
+            </>}
           </section>
         </div>
 
@@ -141,9 +148,9 @@ export function HomePage() {
         )}
 
         <div className="home-history">
-          <section className="past-sessions" aria-labelledby="past-sessions-title">
+          <section className="past-sessions" aria-labelledby="past-sessions-title" aria-busy={isHistoryLoading}>
             <h2 id="past-sessions-title">Past sessions</h2>
-            {previousSessions.map((session) => (
+            {isHistoryLoading ? <HistorySkeleton /> : previousSessions.map((session) => (
               <button className="past-session-row" type="button" key={session.id} onClick={() => setReviewId(session.id)}>
                 <strong>{session.date}</strong><span>{session.duration}</span><span>{session.solved} exercises</span><span>{session.accuracy}</span><ChevronRight aria-hidden="true" />
               </button>
@@ -193,6 +200,24 @@ export function HomePage() {
       </Dialog>
     </main>
   )
+}
+
+function WeeklyGoalSkeleton() {
+  return (
+    <div className="weekly-goal weekly-goal-loading" aria-busy="true">
+      <span className="sr-only">Loading weekly progress</span>
+      <div className="weekly-goal-summary"><Skeleton className="skeleton-tier" /><Skeleton className="skeleton-total" /><Skeleton className="skeleton-next" /></div>
+      <div className="weekday-progress">{Array.from({ length: 7 }, (_, index) => <Skeleton className="skeleton-day" key={index} />)}</div>
+    </div>
+  )
+}
+
+function MetricsSkeleton() {
+  return Array.from({ length: 6 }, (_, index) => <article className="metric-skeleton" key={index}><Skeleton className="skeleton-icon" /><div><Skeleton className="skeleton-number" /><Skeleton className="skeleton-label" /></div></article>)
+}
+
+function HistorySkeleton() {
+  return <div className="history-skeleton">{Array.from({ length: 3 }, (_, index) => <Skeleton className="skeleton-history-row" key={index} />)}</div>
 }
 
 function formatMinutes(minutes: number) {

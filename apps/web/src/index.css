@@ -250,6 +250,7 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { transition-duration: 0.01ms !important; }
+  .skeleton { opacity: 1; animation: none !important; }
 }
 
 .not-found { min-height: 100vh; display: grid; place-content: center; justify-items: start; padding: 32px; background: var(--cream); color: var(--ink); }
@@ -468,6 +469,20 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .home-dashboard .home-metrics article { min-height: 0; grid-template-columns: 28px 1fr; gap: 10px; padding: 16px 18px; }
 .home-dashboard .home-metrics strong { font-size: clamp(2.35rem, 3vw, 3.2rem); }
 .home-dashboard .home-metrics span { line-height: 1.25; }
+.skeleton { opacity: 0; border-radius: 5px; background: linear-gradient(90deg, #eceae4 25%, #f6f5f1 50%, #eceae4 75%); background-size: 200% 100%; animation: skeleton-reveal 0s linear 180ms forwards, skeleton-pulse 1.5s ease-in-out 180ms infinite; }
+@keyframes skeleton-reveal { to { opacity: 1; } }
+@keyframes skeleton-pulse { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.skeleton-streak { width: 92px; height: 15px; }
+.weekly-goal-loading { min-height: 113px; }
+.skeleton-tier { width: 86px; height: 18px; }
+.skeleton-total { width: 62px; height: 30px; }
+.skeleton-next { width: 105px; height: 11px; }
+.weekday-progress .skeleton-day { width: clamp(32px, 3.2vw, 46px); height: clamp(32px, 3.2vw, 46px); align-self: end; border-radius: 50%; }
+.metric-skeleton .skeleton-icon { width: 22px; height: 22px; }
+.metric-skeleton .skeleton-number { width: 74px; height: 36px; }
+.metric-skeleton .skeleton-label { width: min(120px, 100%); height: 14px; margin-top: 8px; }
+.history-skeleton { border-top: 1px solid var(--line); }
+.skeleton-history-row { height: 14px; margin: 22px 4px; }
 .dashboard-refresh-error { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 16px; padding: 12px 16px; border: 1px solid #e4c8bd; border-radius: 8px; background: #fff8f5; color: var(--muted); font-size: 13px; }
 .dashboard-refresh-error button { border: 0; background: transparent; color: var(--cobalt); font-weight: 750; cursor: pointer; }
 .dashboard-refresh-error button:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 2px; }
