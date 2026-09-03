@@ -104,6 +104,16 @@ describe("Napkin V1 flow", () => {
     expect(screen.getByText("Next week: 7x Athlete")).toBeTruthy()
   })
 
+  it("shows accessible skeletons while dashboard data initially loads", async () => {
+    trainingMock.getTrainingSummary.mockReturnValueOnce(new Promise(() => {}))
+    trainingMock.getSessionHistory.mockReturnValueOnce(new Promise(() => {}))
+    const { container } = renderRoute("/home")
+
+    expect((await screen.findByLabelText("Your progress")).getAttribute("aria-busy")).toBe("true")
+    expect(screen.getByRole("heading", { name: "Past sessions" }).closest("section")?.getAttribute("aria-busy")).toBe("true")
+    expect(container.querySelectorAll(".skeleton").length).toBeGreaterThan(0)
+  })
+
   it("keeps progression locked until the correct answer", async () => {
     const user = userEvent.setup()
     renderRoute("/practice?duration=10")
