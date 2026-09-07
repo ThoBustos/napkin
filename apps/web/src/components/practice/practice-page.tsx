@@ -11,6 +11,8 @@ import { finishPracticeSession, getStarterQuestions, getTrainingSummary, recordP
 import { useMountEffect } from "@/hooks/use-mount-effect"
 import { useSessionAlarm } from "@/hooks/use-session-alarm"
 import { useAuth } from "@/features/auth/auth-store"
+import { focusLabel, normalizeTracks, type ExecutiveTrack } from "@/features/training/executive-tracks"
+import { isAcceptedAnswer } from "@/features/training/question-selection"
 
 export function PracticePage() {
   const { search } = useLocation()
@@ -18,6 +20,7 @@ export function PracticePage() {
   const requestedMinutes = Number(params.get("duration"))
   const minutes = Number.isFinite(requestedMinutes) && requestedMinutes > 0 ? Math.min(requestedMinutes, 180) : 10
   const variant = params.get("variant") === "scratchpad" ? "scratchpad" : "speed"
+  const tracks = normalizeTracks((params.get("tracks") ?? "").split(","))
 
   if (variant === "scratchpad") {
     return (
@@ -28,10 +31,10 @@ export function PracticePage() {
     )
   }
 
-  return <SpeedPracticeLoader initialSeconds={minutes * 60} />
+  return <SpeedPracticeLoader key={`${minutes}:${tracks.join(",")}`} initialSeconds={minutes * 60} tracks={tracks} />
 }
 
-function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
+function SpeedPracticeLoader({ initialSeconds, tracks }: { initialSeconds: number; tracks: ExecutiveTrack[] }) {
   const { user } = useAuth()
   const [questions, setQuestions] = useState<TrainingQuestion[] | null>(null)
   const [sessionId, setSessionId] = useState<string | null>(null)
@@ -42,12 +45,16 @@ function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
     let active = true
     if (!user) return
     void Promise.all([
-      getStarterQuestions(),
-      startPracticeSession(user.id, Math.ceil(initialSeconds / 60)),
+      getStarterQuestions(tracks, user.id),
       getTrainingSummary(user.id),
-    ]).then(([nextQuestions, nextSessionId, summary]) => {
+    ]).then(async ([nextQuestions, summary]) => {
       if (!active) return
       if (nextQuestions.length === 0) throw new Error("No training questions are available yet.")
+      const nextSessionId = await startPracticeSession(user.id, Math.ceil(initialSeconds / 60), tracks)
+      if (!active) {
+        await finishPracticeSession(nextSessionId, "abandoned")
+        return
+      }
       setQuestions(nextQuestions)
       setSessionId(nextSessionId)
       setStreak(summary.streak)
@@ -59,10 +66,10 @@ function SpeedPracticeLoader({ initialSeconds }: { initialSeconds: number }) {
 
   if (error) return <main className="auth-status" role="alert">{error}</main>
   if (!questions || !sessionId || streak === null || !user) return <main className="auth-status" aria-live="polite">Preparing your session…</main>
-  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} sessionId={sessionId} userId={user.id} streak={streak} />
+  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} sessionId={sessionId} userId={user.id} streak={streak} tracks={tracks} />
 }
 
-function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; userId: string; streak: number }) {
+function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak, tracks }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; userId: string; streak: number; tracks: ExecutiveTrack[] }) {
   const navigate = useNavigate()
   const [{ answer, checked, hint, questionIndex }, dispatch] = useReducer(trainingReducer, initialTrainingState)
   const attemptNumbers = useRef(new Map<string, number>())
@@ -80,7 +87,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
   const [confirmingLeave, setConfirmingLeave] = useState(false)
   const { playAlarm, primeAlarm } = useSessionAlarm()
   const question = questions[questionIndex % questions.length]
-  const correct = Math.abs(Number(answer.replace(",", ".")) - question.answer) <= question.tolerance
+  const correct = isAcceptedAnswer(answer, question.answer, question.tolerance)
 
   useMountEffect(() => {
     const startedAt = Date.now()
@@ -101,7 +108,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
     event.preventDefault()
     if (saving || finishing) return
     const submittedAnswer = Number(answer.replace(",", "."))
-    if (!Number.isFinite(submittedAnswer)) return
+    if (!answer.trim() || !Number.isFinite(submittedAnswer)) return
     const nextAttemptNumber = (attemptNumbers.current.get(question.id) ?? 0) + 1
     setSaveError("")
     setSaving(true)
@@ -168,7 +175,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
 
   return (
     <main className="speed-shell" onPointerDown={primeAlarm}>
-      <div className="speed-brand"><BrandMark href="/home" /></div>
+      <div className="speed-brand"><BrandMark href="/home" /><span className="practice-focus" aria-label={`Executive focus: ${focusLabel(tracks)}`}>{focusLabel(tracks)}</span></div>
       <div className="speed-progress"><span>Question</span><strong>{String(questionIndex + 1).padStart(2, "0")}</strong><Flame aria-hidden="true" /><b aria-label={`${streak} week streak`}>{streak}</b></div>
 
       <aside className="speed-session">
@@ -181,10 +188,11 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak }:
         <div className="speed-meta"><span>{question.category}</span><small>Question {String(questionIndex + 1).padStart(2, "0")}</small></div>
         <h1>{question.prompt}</h1>
         <p>{question.instruction}</p>
+        {question.executiveTrack && <small className="answer-precision" id="answer-precision">Round to two decimal places if needed.</small>}
 
         <label htmlFor="speed-answer">Your answer</label>
         <div className={`speed-answer ${checked ? correct ? "is-correct" : "is-wrong" : ""}`}>
-          <input id="speed-answer" autoFocus inputMode="decimal" value={answer} onChange={(event) => dispatch({ type: "answer", value: event.target.value })} placeholder="0" disabled={saving || finishing} />
+          <input id="speed-answer" autoFocus inputMode="decimal" aria-describedby={question.executiveTrack ? "answer-precision" : undefined} value={answer} onChange={(event) => dispatch({ type: "answer", value: event.target.value })} placeholder="0" disabled={saving || finishing} />
           <span>{question.unit}</span>
         </div>
 

@@ -5,6 +5,8 @@ import { cleanup, render, screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { AppRoutes } from "./App"
+import { allTracks } from "@/features/training/executive-tracks"
+import { getStarterQuestions } from "@/features/training/training-api"
 
 const authMock = vi.hoisted(() => ({
   signInWithGoogle: vi.fn(),
@@ -46,6 +48,7 @@ vi.mock("@/features/training/session-sounds", () => ({
 }))
 
 beforeEach(() => {
+  localStorage.clear()
   authMock.status = "authenticated"
   vi.clearAllMocks()
 })
@@ -60,6 +63,64 @@ function renderRoute(route: string) {
 }
 
 describe("Napkin V1 flow", () => {
+  it("starts with All and stores the complete session focus", async () => {
+    const user = userEvent.setup()
+    renderRoute("/home")
+    expect(await screen.findByRole("button", { name: "Executive focus: All tracks" })).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: /start training/i }))
+    await screen.findByRole("textbox", { name: "Your answer" })
+    expect(getStarterQuestions).toHaveBeenCalledWith(allTracks, "user-1")
+    expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, allTracks)
+  })
+
+  it("carries multiple selected tracks into practice and persists today's choice", async () => {
+    const user = userEvent.setup()
+    renderRoute("/home")
+    await user.click(await screen.findByRole("button", { name: /executive focus/i }))
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Technology Officer" }))
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Marketing Officer" }))
+    await user.keyboard("{Escape}")
+    expect(screen.getByRole("button", { name: "Executive focus: CMO + CTO" })).toBeTruthy()
+    expect(JSON.parse(localStorage.getItem("napkin:executive-focus:user-1")!).tracks).toEqual(["cmo", "cto"])
+    await user.click(screen.getByRole("button", { name: /start training/i }))
+    await screen.findByRole("textbox", { name: "Your answer" })
+    expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, ["cmo", "cto"])
+    expect(screen.getByLabelText("Executive focus: CMO + CTO")).toBeTruthy()
+  })
+
+  it("Quick start uses All without changing the daily CFO preference", async () => {
+    const user = userEvent.setup()
+    renderRoute("/home")
+    await user.click(await screen.findByRole("button", { name: /executive focus/i }))
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Financial Officer" }))
+    await user.keyboard("{Escape}")
+    await user.click(screen.getByRole("button", { name: /quick start/i }))
+    await screen.findByRole("textbox", { name: "Your answer" })
+    expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, allTracks)
+    expect(JSON.parse(localStorage.getItem("napkin:executive-focus:user-1")!).tracks).toEqual(["cfo"])
+  })
+
+  it("supports keyboard selection and returns to All when the final track is removed", async () => {
+    const user = userEvent.setup()
+    renderRoute("/home")
+    const trigger = await screen.findByRole("button", { name: /executive focus/i })
+    trigger.focus()
+    await user.keyboard("{Enter}{ArrowDown}{Enter}")
+    await user.keyboard("{Escape}")
+    expect(screen.getByRole("button", { name: "Executive focus: CEO" })).toBeTruthy()
+    await user.click(screen.getByRole("button", { name: /executive focus/i }))
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Executive Officer" }))
+    await user.keyboard("{Escape}")
+    expect(screen.getByRole("button", { name: "Executive focus: All tracks" })).toBeTruthy()
+  })
+
+  it("does not create a session when the eligible pool is empty", async () => {
+    vi.mocked(getStarterQuestions).mockResolvedValueOnce([])
+    renderRoute("/practice?tracks=cfo")
+    expect((await screen.findByRole("alert")).textContent).toContain("No training questions")
+    expect(trainingMock.startPracticeSession).not.toHaveBeenCalled()
+  })
+
   it("starts Google sign in from the login page", async () => {
     const user = userEvent.setup()
     authMock.status = "unauthenticated"

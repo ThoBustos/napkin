@@ -14,6 +14,9 @@ import { tierForTarget } from "@/features/training/weekly-goals"
 import { playSessionLaunchSound } from "@/features/training/session-sounds"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 import { useQuery } from "@tanstack/react-query"
+import { ExecutiveFocus } from "./executive-focus"
+import { useDailyExecutiveFocus } from "@/hooks/use-daily-executive-focus"
+import { allTracks, type ExecutiveTrack } from "@/features/training/executive-tracks"
 
 const durations = [5, 10, 15] as const
 
@@ -21,6 +24,7 @@ export function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
+  const { tracks, choose } = useDailyExecutiveFocus(user?.id ?? "")
   const [duration, setDuration] = useState<number | "custom">(10)
   const [customDuration, setCustomDuration] = useState(25)
   const [reviewId, setReviewId] = useState<string | null>(null)
@@ -68,9 +72,9 @@ export function HomePage() {
     navigate(location.pathname, { replace: true })
   }
 
-  function startTraining(minutes: number) {
+  function startTraining(minutes: number, focus: readonly ExecutiveTrack[] = tracks) {
     playSessionLaunchSound()
-    navigate(`/practice?duration=${minutes}`)
+    navigate(`/practice?${new URLSearchParams({ duration: String(minutes), tracks: focus.join(",") })}`)
   }
 
   return (
@@ -93,7 +97,7 @@ export function HomePage() {
           <section className="home-launcher" aria-labelledby="session-title">
             <div className="launcher-heading">
               <h1 id="session-title">Ready to train?</h1>
-              <button type="button" onClick={() => startTraining(10)}>Quick start <ArrowRight aria-hidden="true" /></button>
+              <button type="button" onClick={() => startTraining(10, allTracks)}>Quick start <ArrowRight aria-hidden="true" /></button>
             </div>
             <div className="weekly-goal-section">
               <span>This week</span>
@@ -123,6 +127,7 @@ export function HomePage() {
                 )}
               </div>
             </div>
+            <ExecutiveFocus tracks={tracks} onChange={choose} />
             <Button className="home-start" size="lg" type="button" onClick={() => startTraining(selectedDuration)}>
               Start training <ArrowRight aria-hidden="true" />
             </Button>

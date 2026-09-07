@@ -11,40 +11,54 @@ const databaseMock = vi.hoisted(() => {
     correct_answer: 3.33,
     answer_tolerance: 0.01,
     hint: "Hint",
+    executive_track: null,
+    category_slug: null,
+    publication_status: null,
+    operation_count: null,
+    number_friendliness: null,
   }
   const query = {
     data: [row] as unknown[],
-    error: null,
+    error: null as Error | null,
     select: vi.fn(),
     eq: vi.fn(),
     order: vi.fn(),
     limit: vi.fn(),
+    or: vi.fn(),
+    range: vi.fn(),
+    insert: vi.fn(),
+    single: vi.fn(),
   }
   query.select.mockReturnValue(query)
   query.eq.mockReturnValue(query)
   query.order.mockReturnValue(query)
   query.limit.mockReturnValue(query)
+  query.or.mockReturnValue(query)
+  query.range.mockReturnValue(query)
+  query.insert.mockReturnValue(query)
+  query.single.mockResolvedValue({ data: { id: "session-1" }, error: null })
   return { from: vi.fn(() => query), query, row }
 })
 
 vi.mock("@/lib/supabase", () => ({ supabase: databaseMock }))
 
-import { getSessionHistory, getStarterQuestions } from "./training-api"
+import { getSessionHistory, getStarterQuestions, startPracticeSession } from "./training-api"
 
 describe("getStarterQuestions", () => {
   beforeEach(() => {
     vi.clearAllMocks()
     databaseMock.query.data = [databaseMock.row]
+    databaseMock.query.error = null
   })
 
-  it("loads the 20 most recent active questions before shuffling", async () => {
-    const questions = await getStarterQuestions()
+  it("loads the complete active published track pool and legacy fallback", async () => {
+    const questions = await getStarterQuestions(["cto", "cmo"])
 
     expect(databaseMock.from).toHaveBeenCalledWith("questions")
     expect(databaseMock.query.eq).toHaveBeenCalledWith("is_active", true)
-    expect(databaseMock.query.order).toHaveBeenNthCalledWith(1, "created_at", { ascending: false })
-    expect(databaseMock.query.order).toHaveBeenNthCalledWith(2, "id", { ascending: false })
-    expect(databaseMock.query.limit).toHaveBeenCalledWith(20)
+    expect(databaseMock.query.or).toHaveBeenCalledWith("and(publication_status.eq.published,executive_track.in.(cmo,cto)),and(executive_track.is.null,publication_status.is.null)")
+    expect(databaseMock.query.order).toHaveBeenCalledWith("id", { ascending: true })
+    expect(databaseMock.query.range).toHaveBeenCalledWith(0, 499)
     expect(questions).toHaveLength(1)
     expect(questions[0]).toMatchObject({ executiveTrack: null, publicationStatus: null, answer: 3.33 })
   })
@@ -52,6 +66,30 @@ describe("getStarterQuestions", () => {
   it("maps executive metadata without changing numeric answers", async () => {
     databaseMock.query.data = [{ ...databaseMock.row, executive_track: "ceo", category_slug: "capital-allocation", publication_status: "published", number_friendliness: 2, operation_count: 3 }]
     expect((await getStarterQuestions())[0]).toMatchObject({ executiveTrack: "ceo", categorySlug: "capital-allocation", publicationStatus: "published", numberFriendliness: 2, operationCount: 3, answer: 3.33 })
+  })
+
+  it("paginates instead of treating a database page as pool exhaustion", async () => {
+    databaseMock.query.range.mockResolvedValueOnce({ data: Array.from({ length: 500 }, (_, index) => ({ ...databaseMock.row, id: `q-${index}` })), error: null })
+    const questions = await getStarterQuestions()
+    expect(questions).toHaveLength(501)
+    expect(databaseMock.query.range).toHaveBeenLastCalledWith(500, 999)
+  })
+
+  it("propagates pool errors rather than falling back to unrelated questions", async () => {
+    databaseMock.query.error = new Error("offline")
+    await expect(getStarterQuestions()).rejects.toThrow("offline")
+  })
+
+  it("stores the selected tracks on the new session", async () => {
+    await expect(startPracticeSession("user-1", 10, ["cfo"])).resolves.toBe("session-1")
+    expect(databaseMock.query.insert).toHaveBeenCalledWith({ user_id: "user-1", requested_duration_minutes: 10, selected_tracks: ["cfo"] })
+  })
+
+  it("uses only the current user's recent attempts", async () => {
+    databaseMock.query.limit.mockResolvedValueOnce({ data: [{ question_id: "question-1" }], error: null })
+    await getStarterQuestions(["ceo"], "user-1")
+    expect(databaseMock.query.eq).toHaveBeenCalledWith("user_id", "user-1")
+    expect(databaseMock.query.limit).toHaveBeenCalledWith(100)
   })
 })
 
