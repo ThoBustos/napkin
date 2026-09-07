@@ -1,0 +1,18 @@
+begin;
+set search_path = public, extensions;
+select plan(7);
+insert into auth.users (id) values ('00000000-0000-0000-0000-000000000021'), ('00000000-0000-0000-0000-000000000022');
+select is((select preferred_duration_minutes::integer from profiles where id = '00000000-0000-0000-0000-000000000021'), 10, 'New profiles default to ten minutes');
+select throws_ok($$update profiles set preferred_duration_minutes = 0 where id = '00000000-0000-0000-0000-000000000021'$$, '23514', null, 'Reject zero duration');
+select throws_ok($$update profiles set preferred_duration_minutes = 181 where id = '00000000-0000-0000-0000-000000000021'$$, '23514', null, 'Reject excessive duration');
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000021';
+update profiles set preferred_duration_minutes = 27, preferred_tracks = array['cfo'], updated_at = '2000-01-01' where id = '00000000-0000-0000-0000-000000000021';
+select is((select preferred_duration_minutes::integer from profiles where id = '00000000-0000-0000-0000-000000000021'), 27, 'Owner can save custom duration');
+select is((select preferred_tracks from profiles where id = '00000000-0000-0000-0000-000000000021'), array['cfo'], 'Track selection is preserved');
+select ok((select updated_at > '2000-01-01'::timestamptz from profiles where id = '00000000-0000-0000-0000-000000000021'), 'Profile updates refresh updated_at');
+update profiles set preferred_duration_minutes = 15 where id = '00000000-0000-0000-0000-000000000022';
+reset role;
+select is((select preferred_duration_minutes::integer from profiles where id = '00000000-0000-0000-0000-000000000022'), 10, 'Other user duration cannot be changed');
+select * from finish();
+rollback;

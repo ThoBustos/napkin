@@ -1,12 +1,15 @@
 // @vitest-environment jsdom
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
-import { cleanup, render, screen } from "@testing-library/react"
+import { cleanup, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { MemoryRouter } from "react-router-dom"
 import { AppRoutes } from "./App"
 import { allTracks } from "@/features/training/executive-tracks"
 import { getStarterQuestions } from "@/features/training/training-api"
+
+const preferencesMock = vi.hoisted(() => ({ getPreferredTracks: vi.fn(), savePreferredTracks: vi.fn(), getPreferredDuration: vi.fn(), savePreferredDuration: vi.fn(), isValidDuration: (value: number) => Number.isInteger(value) && value >= 1 && value <= 180 }))
+vi.mock("@/features/training/executive-preferences-api", () => preferencesMock)
 
 const authMock = vi.hoisted(() => ({
   signInWithGoogle: vi.fn(),
@@ -51,6 +54,10 @@ beforeEach(() => {
   localStorage.clear()
   authMock.status = "authenticated"
   vi.clearAllMocks()
+  preferencesMock.getPreferredTracks.mockResolvedValue([...allTracks])
+  preferencesMock.savePreferredTracks.mockImplementation(async (_userId, tracks) => tracks)
+  preferencesMock.getPreferredDuration.mockResolvedValue(10)
+  preferencesMock.savePreferredDuration.mockImplementation(async (_userId, minutes) => minutes)
 })
 
 afterEach(() => {
@@ -73,42 +80,43 @@ describe("Napkin V1 flow", () => {
     expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, allTracks)
   })
 
-  it("carries multiple selected tracks into practice and persists today's choice", async () => {
+  it("saves multiple tracks when the menu closes and carries them into practice", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
-    await user.click(await screen.findByRole("button", { name: /executive focus/i }))
+    await user.click(await screen.findByRole("button", { name: /^Executive focus:/i }))
     await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Technology Officer" }))
     await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Marketing Officer" }))
     await user.keyboard("{Escape}")
     expect(screen.getByRole("button", { name: "Executive focus: CMO + CTO" })).toBeTruthy()
-    expect(JSON.parse(localStorage.getItem("napkin:executive-focus:user-1")!).tracks).toEqual(["cmo", "cto"])
+    expect(preferencesMock.savePreferredTracks).toHaveBeenCalledWith("user-1", ["cmo", "cto"])
+    expect(localStorage.getItem("napkin:executive-focus:user-1")).toBeNull()
     await user.click(screen.getByRole("button", { name: /start training/i }))
     await screen.findByRole("textbox", { name: "Your answer" })
     expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, ["cmo", "cto"])
     expect(screen.getByLabelText("Executive focus: CMO + CTO")).toBeTruthy()
   })
 
-  it("Quick start uses All without changing the daily CFO preference", async () => {
+  it("Quick start uses All without changing the saved CFO preference", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
-    await user.click(await screen.findByRole("button", { name: /executive focus/i }))
+    await user.click(await screen.findByRole("button", { name: /^Executive focus:/i }))
     await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Financial Officer" }))
     await user.keyboard("{Escape}")
     await user.click(screen.getByRole("button", { name: /quick start/i }))
     await screen.findByRole("textbox", { name: "Your answer" })
     expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, allTracks)
-    expect(JSON.parse(localStorage.getItem("napkin:executive-focus:user-1")!).tracks).toEqual(["cfo"])
+    expect(preferencesMock.savePreferredTracks).toHaveBeenCalledExactlyOnceWith("user-1", ["cfo"])
   })
 
   it("supports keyboard selection and returns to All when the final track is removed", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
-    const trigger = await screen.findByRole("button", { name: /executive focus/i })
+    const trigger = await screen.findByRole("button", { name: /^Executive focus:/i })
     trigger.focus()
     await user.keyboard("{Enter}{ArrowDown}{Enter}")
     await user.keyboard("{Escape}")
     expect(screen.getByRole("button", { name: "Executive focus: CEO" })).toBeTruthy()
-    await user.click(screen.getByRole("button", { name: /executive focus/i }))
+    await user.click(screen.getByRole("button", { name: /^Executive focus:/i }))
     await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Executive Officer" }))
     await user.keyboard("{Escape}")
     expect(screen.getByRole("button", { name: "Executive focus: All tracks" })).toBeTruthy()
@@ -119,6 +127,91 @@ describe("Napkin V1 flow", () => {
     renderRoute("/practice?tracks=cfo")
     expect((await screen.findByRole("alert")).textContent).toContain("No training questions")
     expect(trainingMock.startPracticeSession).not.toHaveBeenCalled()
+  })
+
+  it("restores a saved preference without writing it back", async () => {
+    preferencesMock.getPreferredTracks.mockResolvedValue(["cfo"])
+    renderRoute("/home")
+    expect(await screen.findByRole("button", { name: "Executive focus: CFO" })).toBeTruthy()
+    expect(preferencesMock.savePreferredTracks).not.toHaveBeenCalled()
+  })
+
+  it("restores a custom duration and carries it into normal practice", async () => {
+    preferencesMock.getPreferredDuration.mockResolvedValue(27)
+    const user = userEvent.setup()
+    renderRoute("/home")
+    expect((await screen.findByRole("spinbutton", { name: "Custom duration in minutes" }) as HTMLInputElement).value).toBe("27")
+    await user.click(screen.getByRole("button", { name: /start training/i }))
+    expect(await screen.findByText("27:00")).toBeTruthy()
+    expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 27, allTracks)
+  })
+
+  it("saves a custom duration on blur and rejects fractional or out-of-range input", async () => {
+    preferencesMock.getPreferredDuration.mockResolvedValue(27)
+    const user = userEvent.setup()
+    renderRoute("/home")
+    const input = await screen.findByRole("spinbutton", { name: "Custom duration in minutes" })
+    await user.clear(input)
+    await user.type(input, "181")
+    await user.tab()
+    expect(preferencesMock.savePreferredDuration).not.toHaveBeenCalled()
+    expect(screen.getByRole("button", { name: /start training/i }).hasAttribute("disabled")).toBe(true)
+    await user.clear(input)
+    await user.type(input, "12.5")
+    await user.tab()
+    expect(preferencesMock.savePreferredDuration).not.toHaveBeenCalled()
+    await user.clear(input)
+    await user.type(input, "35")
+    await user.tab()
+    expect(preferencesMock.savePreferredDuration).toHaveBeenCalledWith("user-1", 35)
+  })
+
+  it("Quick start stays at ten minutes without overwriting a saved duration", async () => {
+    preferencesMock.getPreferredDuration.mockResolvedValue(27)
+    const user = userEvent.setup()
+    renderRoute("/home")
+    await screen.findByRole("spinbutton", { name: "Custom duration in minutes" })
+    await user.click(screen.getByRole("button", { name: /quick start/i }))
+    expect(await screen.findByText("10:00")).toBeTruthy()
+    expect(preferencesMock.savePreferredDuration).not.toHaveBeenCalled()
+  })
+
+  it("offers retry after a duration save failure without resetting the chosen time", async () => {
+    preferencesMock.savePreferredDuration.mockRejectedValueOnce(new Error("offline"))
+    const user = userEvent.setup()
+    renderRoute("/home")
+    await waitFor(() => expect(screen.getByRole("button", { name: "15 min" }).hasAttribute("disabled")).toBe(false))
+    await user.click(screen.getByRole("button", { name: "15 min" }))
+    await user.click(await screen.findByRole("button", { name: "Retry saving duration" }))
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Retry saving duration" })).toBeNull())
+    expect(screen.getByRole("button", { name: "15 min" }).getAttribute("aria-pressed")).toBe("true")
+    expect(preferencesMock.savePreferredDuration).toHaveBeenCalledTimes(2)
+  })
+
+  it("keeps the selection and offers retry when autosave fails", async () => {
+    preferencesMock.savePreferredTracks.mockRejectedValueOnce(new Error("offline"))
+    const user = userEvent.setup()
+    renderRoute("/home")
+    await user.click(await screen.findByRole("button", { name: "Executive focus: All tracks" }))
+    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Financial Officer" }))
+    expect(preferencesMock.savePreferredTracks).not.toHaveBeenCalled()
+    await user.keyboard("{Escape}")
+    await user.click(await screen.findByRole("button", { name: "Retry saving" }))
+    await waitFor(() => expect(screen.queryByRole("button", { name: "Retry saving" })).toBeNull())
+    expect(screen.getByRole("button", { name: "Executive focus: CFO" })).toBeTruthy()
+    expect(preferencesMock.savePreferredTracks).toHaveBeenCalledTimes(2)
+  })
+
+  it("does not launch normal practice with All when loading preferences fails", async () => {
+    preferencesMock.getPreferredTracks.mockRejectedValueOnce(new Error("offline"))
+    const user = userEvent.setup()
+    renderRoute("/home")
+    const retry = await screen.findByRole("button", { name: "Retry loading" })
+    expect(screen.getByRole("button", { name: /start training/i }).hasAttribute("disabled")).toBe(true)
+    preferencesMock.getPreferredTracks.mockResolvedValue(["cfo"])
+    await user.click(retry)
+    expect(await screen.findByRole("button", { name: "Executive focus: CFO" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: /start training/i }).hasAttribute("disabled")).toBe(false)
   })
 
   it("starts Google sign in from the login page", async () => {

@@ -1,0 +1,26 @@
+begin;
+set search_path = public, extensions;
+select plan(10);
+insert into auth.users (id) values ('00000000-0000-0000-0000-000000000011'), ('00000000-0000-0000-0000-000000000012');
+select is((select preferred_tracks from profiles where id = '00000000-0000-0000-0000-000000000011'), null::text[], 'New users default to All');
+select throws_ok($$update profiles set preferred_tracks = array['invalid'] where id = '00000000-0000-0000-0000-000000000011'$$, '23514', null, 'Reject unknown tracks');
+select throws_ok($$update profiles set preferred_tracks = array[]::text[] where id = '00000000-0000-0000-0000-000000000011'$$, '23514', null, 'Reject empty explicit selection');
+select throws_ok($$update profiles set preferred_tracks = array['cfo', null] where id = '00000000-0000-0000-0000-000000000011'$$, '23514', null, 'Reject null array entries');
+select throws_ok($$update profiles set preferred_tracks = array['cfo', 'cfo'] where id = '00000000-0000-0000-0000-000000000011'$$, '23514', null, 'Reject duplicate tracks');
+
+set local role authenticated;
+set local request.jwt.claim.sub = '00000000-0000-0000-0000-000000000011';
+update profiles set preferred_tracks = array['cfo', 'cto'] where id = '00000000-0000-0000-0000-000000000011';
+select is((select preferred_tracks from profiles where id = '00000000-0000-0000-0000-000000000011'), array['cfo', 'cto'], 'Owner can save multiple tracks');
+select is((select count(*) from profiles where id = '00000000-0000-0000-0000-000000000012'), 0::bigint, 'Other profiles remain private');
+update profiles set preferred_tracks = array['risk'] where id = '00000000-0000-0000-0000-000000000012';
+reset role;
+select is((select preferred_tracks from profiles where id = '00000000-0000-0000-0000-000000000012'), null::text[], 'Cannot change another user preference');
+set local role authenticated;
+update profiles set preferred_tracks = null where id = '00000000-0000-0000-0000-000000000011';
+select is((select preferred_tracks from profiles where id = '00000000-0000-0000-0000-000000000011'), null::text[], 'Owner can return to All');
+set local role anon;
+select throws_ok($$select preferred_tracks from profiles$$, '42501', null, 'Anonymous users cannot read preferences');
+reset role;
+select * from finish();
+rollback;

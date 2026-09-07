@@ -15,7 +15,8 @@ import { playSessionLaunchSound } from "@/features/training/session-sounds"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 import { useQuery } from "@tanstack/react-query"
 import { ExecutiveFocus } from "./executive-focus"
-import { useDailyExecutiveFocus } from "@/hooks/use-daily-executive-focus"
+import { useExecutiveFocus } from "@/hooks/use-executive-focus"
+import { usePreferredDuration } from "@/hooks/use-preferred-duration"
 import { allTracks, type ExecutiveTrack } from "@/features/training/executive-tracks"
 
 const durations = [5, 10, 15] as const
@@ -24,9 +25,8 @@ export function HomePage() {
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
-  const { tracks, choose } = useDailyExecutiveFocus(user?.id ?? "")
-  const [duration, setDuration] = useState<number | "custom">(10)
-  const [customDuration, setCustomDuration] = useState(25)
+  const focus = useExecutiveFocus(user?.id ?? "")
+  const duration = usePreferredDuration(user?.id ?? "")
   const [reviewId, setReviewId] = useState<string | null>(null)
   const [sessionResult, setSessionResult] = useState<PracticeSessionResult | null>(null)
   const completedSessionId = new URLSearchParams(location.search).get("completed")
@@ -46,7 +46,7 @@ export function HomePage() {
   const previousSessions: TrainingSessionHistory[] = historyQuery.data ?? []
   const isSummaryLoading = summaryQuery.isPending
   const isHistoryLoading = historyQuery.isPending
-  const selectedDuration = duration === "custom" ? customDuration : duration
+  const selectedDuration = duration.minutes
   const reviewSession = previousSessions.find((session) => session.id === reviewId)
   const fullName = user?.user_metadata.full_name ?? user?.user_metadata.name ?? "Napkin athlete"
   const initials = fullName.split(" ").map((part: string) => part[0]).join("").slice(0, 2).toUpperCase() || "NA"
@@ -72,9 +72,9 @@ export function HomePage() {
     navigate(location.pathname, { replace: true })
   }
 
-  function startTraining(minutes: number, focus: readonly ExecutiveTrack[] = tracks) {
+  function startTraining(minutes: number, tracks: readonly ExecutiveTrack[] = focus.tracks) {
     playSessionLaunchSound()
-    navigate(`/practice?${new URLSearchParams({ duration: String(minutes), tracks: focus.join(",") })}`)
+    navigate(`/practice?${new URLSearchParams({ duration: String(minutes), tracks: tracks.join(",") })}`)
   }
 
   return (
@@ -112,23 +112,31 @@ export function HomePage() {
               <span>Duration</span>
               <div className="duration-options" aria-label="Session length">
                 {durations.map((minutes) => (
-                  <button key={minutes} className={duration === minutes ? "is-selected" : ""} type="button" aria-pressed={duration === minutes} onClick={() => setDuration(minutes)}>
+                  <button key={minutes} className={!duration.isCustom && selectedDuration === minutes ? "is-selected" : ""} type="button" disabled={!duration.isReady || duration.isSaving} aria-pressed={duration.isReady && !duration.isCustom && selectedDuration === minutes} onClick={() => duration.choose(minutes)}>
                     {minutes} min
                   </button>
                 ))}
-                {duration === "custom" ? (
+                {duration.isCustom ? (
                   <label className="duration-custom is-selected">
                     <span className="sr-only">Custom duration in minutes</span>
-                    <input autoFocus type="number" min="1" max="180" value={customDuration} onChange={(event) => setCustomDuration(Math.max(1, Number(event.target.value)))} />
+                    <input autoFocus aria-label="Custom duration in minutes" type="number" min="1" max="180" step="1" value={duration.value} disabled={duration.isSaving} aria-invalid={!duration.valid} aria-describedby={!duration.valid ? "duration-error" : undefined} onChange={(event) => duration.edit(event.target.value)} onBlur={duration.save} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); event.currentTarget.blur() } }} />
                     <span>min</span>
                   </label>
                 ) : (
-                  <button type="button" aria-pressed="false" onClick={() => setDuration("custom")}>Custom</button>
+                  <button type="button" aria-pressed="false" disabled={!duration.isReady || duration.isSaving} onClick={() => duration.choose(25, true)}>Custom</button>
                 )}
               </div>
             </div>
-            <ExecutiveFocus tracks={tracks} onChange={choose} />
-            <Button className="home-start" size="lg" type="button" onClick={() => startTraining(selectedDuration)}>
+            {!duration.valid && <p id="duration-error" className="focus-save-status" role="alert">Enter whole minutes from 1 to 180.</p>}
+            {!duration.isReady && !duration.loadFailed && <p className="focus-save-status" role="status">Loading duration…</p>}
+            {duration.isSaving && <p className="focus-save-status" role="status">Saving duration…</p>}
+            {duration.saveFailed && <p className="focus-save-status" role="alert">Could not save your duration. <button type="button" onClick={duration.save}>Retry saving duration</button></p>}
+            {duration.loadFailed && !duration.saveFailed && <p className="focus-save-status" role="alert">Could not load your saved duration. <button type="button" onClick={duration.reload}>Retry loading duration</button></p>}
+            <ExecutiveFocus tracks={focus.tracks} onChange={focus.choose} onClose={focus.save} disabled={!focus.isReady || focus.isSaving} loading={!focus.isReady} />
+            {focus.isSaving && <p className="focus-save-status" role="status">Saving focus…</p>}
+            {focus.saveFailed && <p className="focus-save-status" role="alert">Could not save your focus. <button type="button" onClick={focus.save}>Retry saving</button></p>}
+            {focus.loadFailed && !focus.saveFailed && <p className="focus-save-status" role="alert">Could not load your saved focus. <button type="button" onClick={focus.reload}>Retry loading</button></p>}
+            <Button className="home-start" size="lg" type="button" disabled={!focus.isReady || !duration.isReady || !duration.valid} onClick={() => startTraining(selectedDuration)}>
               Start training <ArrowRight aria-hidden="true" />
             </Button>
           </section>

@@ -11,6 +11,6 @@ export default defineConfig({
   testMatch: "**/*.e2e.ts",
   fullyParallel: false,
   workers: 1,
-  use: { baseURL: "http://localhost:5188", channel: "chrome", trace: "retain-on-failure" },
-  webServer: { command: "pnpm dev --host localhost --port 5188 --strictPort", url: "http://localhost:5188", reuseExistingServer: false },
+  use: { baseURL: "http://localhost:5189", channel: "chrome", trace: "retain-on-failure" },
+  webServer: { command: "pnpm dev --host localhost --port 5189 --strictPort", url: "http://localhost:5189", reuseExistingServer: false },
 })
