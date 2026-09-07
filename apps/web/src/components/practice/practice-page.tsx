@@ -7,12 +7,11 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { Link, useLocation, useNavigate } from "react-router-dom"
 import { useCountdown } from "@/hooks/use-countdown"
 import { initialTrainingState, trainingReducer } from "./training-reducer"
-import { finishPracticeSession, getStarterQuestions, getTrainingSummary, recordPracticeAttempt, startPracticeSession, type PracticeSessionResult, type TrainingQuestion } from "@/features/training/training-api"
+import { finishPracticeSession, getStarterQuestions, getTrainingSummary, recordPracticeAttempt, startPracticeSession, type PracticeAttemptResult, type PracticeSessionResult, type TrainingQuestion } from "@/features/training/training-api"
 import { useMountEffect } from "@/hooks/use-mount-effect"
 import { useSessionAlarm } from "@/hooks/use-session-alarm"
 import { useAuth } from "@/features/auth/auth-store"
 import { focusLabel, normalizeTracks, type ExecutiveTrack } from "@/features/training/executive-tracks"
-import { isAcceptedAnswer } from "@/features/training/question-selection"
 
 export function PracticePage() {
   const { search } = useLocation()
@@ -66,28 +65,28 @@ function SpeedPracticeLoader({ initialSeconds, tracks }: { initialSeconds: numbe
 
   if (error) return <main className="auth-status" role="alert">{error}</main>
   if (!questions || !sessionId || streak === null || !user) return <main className="auth-status" aria-live="polite">Preparing your session…</main>
-  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} sessionId={sessionId} userId={user.id} streak={streak} tracks={tracks} />
+  return <SpeedPractice initialSeconds={initialSeconds} questions={questions} sessionId={sessionId} streak={streak} tracks={tracks} />
 }
 
-function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak, tracks }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; userId: string; streak: number; tracks: ExecutiveTrack[] }) {
+function SpeedPractice({ initialSeconds, questions, sessionId, streak, tracks }: { initialSeconds: number; questions: TrainingQuestion[]; sessionId: string; streak: number; tracks: ExecutiveTrack[] }) {
   const navigate = useNavigate()
   const [{ answer, checked, hint, questionIndex }, dispatch] = useReducer(trainingReducer, initialTrainingState)
-  const attemptNumbers = useRef(new Map<string, number>())
   const attemptsSubmitted = useRef(0)
   const solvedQuestions = useRef(new Set<string>())
   const firstTrySolved = useRef(0)
   const totalResponseTimeMs = useRef(0)
   const sessionStartedAt = useRef(0)
   const questionStartedAt = useRef(0)
-  const pendingWrite = useRef<Promise<void> | null>(null)
+  const pendingWrite = useRef<Promise<PracticeAttemptResult> | null>(null)
   const finalizing = useRef(false)
   const [saveError, setSaveError] = useState("")
   const [saving, setSaving] = useState(false)
   const [finishing, setFinishing] = useState(false)
   const [confirmingLeave, setConfirmingLeave] = useState(false)
+  const [feedback, setFeedback] = useState<PracticeAttemptResult | null>(null)
   const { playAlarm, primeAlarm } = useSessionAlarm()
   const question = questions[questionIndex % questions.length]
-  const correct = isAcceptedAnswer(answer, question.answer, question.tolerance)
+  const correct = checked && feedback?.isCorrect === true
 
   useMountEffect(() => {
     const startedAt = Date.now()
@@ -109,27 +108,23 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak, t
     if (saving || finishing) return
     const submittedAnswer = Number(answer.replace(",", "."))
     if (!answer.trim() || !Number.isFinite(submittedAnswer)) return
-    const nextAttemptNumber = (attemptNumbers.current.get(question.id) ?? 0) + 1
     setSaveError("")
     setSaving(true)
     const write = recordPracticeAttempt({
       sessionId,
       questionId: question.id,
-      userId,
-      attemptNumber: nextAttemptNumber,
       submittedAnswer,
-      isCorrect: correct,
       usedHint: hint,
       responseTimeMs: Date.now() - questionStartedAt.current,
     })
     pendingWrite.current = write
     try {
-      await write
-      attemptNumbers.current.set(question.id, nextAttemptNumber)
+      const result = await write
+      setFeedback(result)
       attemptsSubmitted.current += 1
-      if (correct && !solvedQuestions.current.has(question.id)) {
+      if (result.isCorrect && !solvedQuestions.current.has(question.id)) {
         solvedQuestions.current.add(question.id)
-        if (nextAttemptNumber === 1) firstTrySolved.current += 1
+        if (result.attemptNumber === 1) firstTrySolved.current += 1
         totalResponseTimeMs.current += Date.now() - questionStartedAt.current
       }
       dispatch({ type: "check" })
@@ -143,6 +138,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak, t
 
   function next() {
     questionStartedAt.current = Date.now()
+    setFeedback(null)
     dispatch({ type: "next" })
   }
 
@@ -197,7 +193,7 @@ function SpeedPractice({ initialSeconds, questions, sessionId, userId, streak, t
         </div>
 
         {hint && <div className="speed-hint"><Lightbulb aria-hidden="true" /><span>{question.hint}</span></div>}
-        {checked && <div className={`speed-feedback ${correct ? "is-correct" : "is-wrong"}`} role="status">{correct && <Check aria-hidden="true" />}<span>{correct ? `Correct. ${question.answer} ${question.unit}.` : "Not yet. Use the hint and try again."}</span></div>}
+        {checked && <div className={`speed-feedback ${correct ? "is-correct" : "is-wrong"}`} role="status">{correct && <Check aria-hidden="true" />}<span>{correct ? `Correct. ${feedback?.correctAnswer} ${question.unit}.` : "Not yet. Use the hint and try again."}</span></div>}
         {saveError && <p className="auth-error" role="alert">{saveError}</p>}
 
         <div className="speed-actions">

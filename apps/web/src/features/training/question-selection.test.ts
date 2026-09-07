@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest"
-import { isAcceptedAnswer, orderPracticeQuestions } from "./question-selection"
+import { orderPracticeQuestions } from "./question-selection"
 import { allTracks, normalizeTracks, type ExecutiveTrack } from "./executive-tracks"
 import type { TrainingQuestion } from "./training-api"
 
 function question(id: string, executiveTrack: ExecutiveTrack | null, difficulty = 1): TrainingQuestion {
-  return { id, executiveTrack, difficulty, category: "Category", categorySlug: id, publicationStatus: executiveTrack ? "published" : null, numberFriendliness: executiveTrack ? 1 : null, operationCount: executiveTrack ? 1 : null, prompt: id, instruction: "Answer", unit: "%", answer: 25, tolerance: 0.01, hint: "Hint" }
+  return { id, executiveTrack, difficulty, category: "Category", categorySlug: id, publicationStatus: executiveTrack ? "published" : null, numberFriendliness: executiveTrack ? 1 : null, operationCount: executiveTrack ? 1 : null, prompt: id, instruction: "Answer", unit: "%", hint: "Hint" }
 }
 const pool = allTracks.flatMap((track) => [1, 1, 1, 1, 1, 2, 2, 2, 3, 3].map((level, i) => question(`${track}-${i}`, track, level)))
 const legacy = [question("legacy-1", null), question("legacy-2", null)]
@@ -53,12 +53,4 @@ describe("balanced practice selection", () => {
     expect(normalizeTracks([])).toEqual(allTracks)
     expect(normalizeTracks(["invalid"])).toEqual(allTracks)
   })
-})
-
-it("accepts tolerance boundaries and decimal commas without treating blanks as zero", () => {
-  expect(isAcceptedAnswer("3.34", 3.33, 0.01)).toBe(true)
-  expect(isAcceptedAnswer("3,33", 3.33, 0.01)).toBe(true)
-  expect(isAcceptedAnswer("3.35", 3.33, 0.01)).toBe(false)
-  expect(isAcceptedAnswer(" ", 0, 0.01)).toBe(false)
-  expect(isAcceptedAnswer("Infinity", 0, 0.01)).toBe(false)
 })

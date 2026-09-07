@@ -43,10 +43,3 @@ export function orderPracticeQuestions(questions: readonly TrainingQuestion[], t
     .sort((a, b) => Number(recent.has(a.id)) - Number(recent.has(b.id)))
   return [...ordered, ...legacy]
 }
-
-export function isAcceptedAnswer(input: string, answer: number, tolerance: number): boolean {
-  if (!input.trim()) return false
-  const value = Number(input.replace(",", "."))
-  const epsilon = Number.EPSILON * Math.max(1, Math.abs(value), Math.abs(answer)) * 4
-  return Number.isFinite(value) && Math.abs(value - answer) <= tolerance + epsilon
-}
