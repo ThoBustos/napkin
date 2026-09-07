@@ -2,7 +2,7 @@ import { Check, ChevronDown } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuCheckboxItem } from "@/components/ui/dropdown-menu"
 import { allTracks, executiveTracks, focusLabel, type ExecutiveTrack } from "@/features/training/executive-tracks"
 
-export function ExecutiveFocus({ tracks, onChange }: { tracks: ExecutiveTrack[]; onChange: (tracks: ExecutiveTrack[]) => void }) {
+export function ExecutiveFocus({ tracks, onChange, onClose, disabled, loading }: { tracks: ExecutiveTrack[]; onChange: (tracks: ExecutiveTrack[]) => void; onClose: () => void; disabled: boolean; loading: boolean }) {
   const isAll = tracks.length === allTracks.length
   function toggle(track: ExecutiveTrack) {
     onChange(isAll ? [track] : tracks.includes(track) ? tracks.filter((value) => value !== track) : [...tracks, track])
@@ -10,10 +10,10 @@ export function ExecutiveFocus({ tracks, onChange }: { tracks: ExecutiveTrack[];
   return (
     <div className="executive-focus">
       <span id="executive-focus-label">Executive focus</span>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={(open) => { if (!open) onClose() }}>
         <DropdownMenuTrigger asChild>
-          <button className="executive-focus-trigger" type="button" aria-label={`Executive focus: ${focusLabel(tracks)}`}>
-            <span>{focusLabel(tracks)}</span><ChevronDown aria-hidden="true" />
+          <button className="executive-focus-trigger" type="button" disabled={disabled} aria-label={loading ? "Loading executive focus" : `Executive focus: ${focusLabel(tracks)}`}>
+            <span>{loading ? "Loading focus…" : focusLabel(tracks)}</span><ChevronDown aria-hidden="true" />
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="executive-focus-menu" align="start" aria-labelledby="executive-focus-label">
