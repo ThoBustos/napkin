@@ -1,5 +1,6 @@
 import { supabase } from "@/lib/supabase"
-import type { ExecutiveTrack, PublicationStatus } from "./executive-tracks"
+import { allTracks, normalizeTracks, type ExecutiveTrack, type PublicationStatus } from "./executive-tracks"
+import { orderPracticeQuestions } from "./question-selection"
 import { calculateTrainingSummary } from "./training-metrics"
 import { nextWeekStartKey, weekStartKey, type WeeklyGoalPlan, type WeeklyGoalSetting, type WeeklyGoalTarget } from "./weekly-goals"
 
@@ -103,20 +104,31 @@ interface QuestionRow {
   hint: string
 }
 
-export async function getStarterQuestions(limit = 20): Promise<TrainingQuestion[]> {
+export async function getStarterQuestions(selectedTracks: readonly ExecutiveTrack[] = allTracks, userId?: string): Promise<TrainingQuestion[]> {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
-
-  const { data, error } = await supabase
-    .from("questions")
-    .select("id, category, difficulty, prompt, instruction, unit, correct_answer, answer_tolerance, hint, executive_track, category_slug, number_friendliness, operation_count, publication_status")
-    .eq("is_active", true)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(limit)
-
-  if (error) throw error
-
-  return shuffle(data as QuestionRow[]).map((question) => ({
+  const tracks = normalizeTracks(selectedTracks)
+  const rows: QuestionRow[] = []
+  const pageSize = 500
+  for (let offset = 0; ; offset += pageSize) {
+    const { data, error } = await supabase.from("questions")
+      .select("id, category, difficulty, prompt, instruction, unit, correct_answer, answer_tolerance, hint, executive_track, category_slug, number_friendliness, operation_count, publication_status")
+      .eq("is_active", true)
+      .or(`and(publication_status.eq.published,executive_track.in.(${tracks.join(",")})),and(executive_track.is.null,publication_status.is.null)`)
+      .order("id", { ascending: true })
+      .range(offset, offset + pageSize - 1)
+    if (error) throw error
+    const page = (data ?? []) as QuestionRow[]
+    rows.push(...page)
+    if (page.length < pageSize) break
+  }
+  let recentIds: string[] = []
+  if (userId) {
+    const { data, error } = await supabase.from("attempts").select("question_id")
+      .eq("user_id", userId).order("created_at", { ascending: false }).limit(100)
+    // Recency is best effort; a history refresh failure must not prevent practice.
+    if (!error) recentIds = (data ?? []).map(({ question_id }) => question_id)
+  }
+  const questions = rows.map((question) => ({
     id: question.id,
     executiveTrack: question.executive_track ?? null,
     categorySlug: question.category_slug ?? null,
@@ -132,6 +144,7 @@ export async function getStarterQuestions(limit = 20): Promise<TrainingQuestion[
     tolerance: Number(question.answer_tolerance),
     hint: question.hint,
   }))
+  return orderPracticeQuestions(questions, tracks, recentIds)
 }
 
 export async function startPracticeSession(userId: string, requestedDurationMinutes: number, selectedTracks?: readonly ExecutiveTrack[]) {
@@ -284,13 +297,4 @@ function toSessionHistory(session: HistoryRow): TrainingSessionHistory {
     averageAttempts: averageAttempts.toFixed(1),
     questions,
   }
-}
-
-function shuffle<T>(values: T[]) {
-  const shuffled = [...values]
-  for (let index = shuffled.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
-    ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
-  }
-  return shuffled
 }

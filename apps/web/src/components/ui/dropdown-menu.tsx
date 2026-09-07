@@ -14,3 +14,4 @@ export function DropdownMenuContent({ className, sideOffset = 8, ...props }: Com
 }
 
 export const DropdownMenuItem = DropdownMenuPrimitive.Item
+export const DropdownMenuCheckboxItem = DropdownMenuPrimitive.CheckboxItem

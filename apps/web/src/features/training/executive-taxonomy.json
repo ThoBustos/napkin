@@ -1,7 +1,7 @@
 [
   {
     "slug": "ceo",
-    "label": "CEO and general management",
+    "label": "Chief Executive Officer",
     "categories": [
       "growth-and-market-share",
       "strategic-trade-offs",
@@ -17,7 +17,7 @@
   },
   {
     "slug": "coo",
-    "label": "COO and operations",
+    "label": "Chief Operating Officer",
     "categories": [
       "capacity-and-utilization",
       "throughput-and-bottlenecks",
@@ -33,7 +33,7 @@
   },
   {
     "slug": "cfo",
-    "label": "CFO and finance",
+    "label": "Chief Financial Officer",
     "categories": [
       "revenue-and-expense-forecasting",
       "gross-and-operating-margins",
@@ -49,7 +49,7 @@
   },
   {
     "slug": "cro",
-    "label": "CRO and sales",
+    "label": "Chief Revenue Officer",
     "categories": [
       "pipeline-coverage",
       "funnel-conversion",
@@ -65,7 +65,7 @@
   },
   {
     "slug": "cmo",
-    "label": "CMO and marketing",
+    "label": "Chief Marketing Officer",
     "categories": [
       "customer-acquisition-cost",
       "return-on-advertising-spend",
@@ -81,7 +81,7 @@
   },
   {
     "slug": "cpo",
-    "label": "CPO and product",
+    "label": "Chief Product Officer",
     "categories": [
       "activation",
       "engagement",
@@ -97,7 +97,7 @@
   },
   {
     "slug": "cto",
-    "label": "CTO and engineering",
+    "label": "Chief Technology Officer",
     "categories": [
       "infrastructure-capacity",
       "cloud-unit-economics",
@@ -113,7 +113,7 @@
   },
   {
     "slug": "cio",
-    "label": "CIO, data, and AI",
+    "label": "Chief Information Officer",
     "categories": [
       "systems-utilization",
       "automation-returns",
@@ -129,7 +129,7 @@
   },
   {
     "slug": "chro",
-    "label": "CHRO and people",
+    "label": "Chief Human Resources Officer",
     "categories": [
       "headcount-planning",
       "hiring-funnels",
@@ -161,7 +161,7 @@
   },
   {
     "slug": "risk",
-    "label": "Chief risk officer",
+    "label": "Chief Risk Officer",
     "categories": [
       "probability-of-loss",
       "expected-loss",
