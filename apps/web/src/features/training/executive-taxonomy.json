@@ -1,0 +1,178 @@
+[
+  {
+    "slug": "ceo",
+    "label": "CEO and general management",
+    "categories": [
+      "growth-and-market-share",
+      "strategic-trade-offs",
+      "resource-allocation",
+      "portfolio-decisions",
+      "pricing-and-profitability",
+      "acquisitions-and-divestitures",
+      "capital-allocation",
+      "scenario-planning",
+      "competitive-benchmarking",
+      "enterprise-valuation"
+    ]
+  },
+  {
+    "slug": "coo",
+    "label": "COO and operations",
+    "categories": [
+      "capacity-and-utilization",
+      "throughput-and-bottlenecks",
+      "productivity",
+      "yield-and-scrap",
+      "inventory-turns",
+      "lead-and-cycle-times",
+      "service-levels",
+      "cost-reduction",
+      "quality-and-defect-rates",
+      "operating-leverage"
+    ]
+  },
+  {
+    "slug": "cfo",
+    "label": "CFO and finance",
+    "categories": [
+      "revenue-and-expense-forecasting",
+      "gross-and-operating-margins",
+      "cash-flow",
+      "working-capital",
+      "breakeven",
+      "financing-and-leverage",
+      "return-on-invested-capital",
+      "valuation-multiples",
+      "dilution-and-per-share-value",
+      "budget-variance"
+    ]
+  },
+  {
+    "slug": "cro",
+    "label": "CRO and sales",
+    "categories": [
+      "pipeline-coverage",
+      "funnel-conversion",
+      "quota-attainment",
+      "average-contract-value",
+      "sales-productivity",
+      "commissions",
+      "discounting",
+      "expansion-and-churn",
+      "territory-planning",
+      "revenue-forecasting"
+    ]
+  },
+  {
+    "slug": "cmo",
+    "label": "CMO and marketing",
+    "categories": [
+      "customer-acquisition-cost",
+      "return-on-advertising-spend",
+      "funnel-conversion",
+      "attribution",
+      "campaign-economics",
+      "customer-lifetime-value",
+      "channel-mix",
+      "market-sizing",
+      "cohort-retention",
+      "brand-and-demand-lift"
+    ]
+  },
+  {
+    "slug": "cpo",
+    "label": "CPO and product",
+    "categories": [
+      "activation",
+      "engagement",
+      "retention-and-churn",
+      "feature-adoption",
+      "conversion",
+      "pricing-and-packaging",
+      "experiment-analysis",
+      "product-led-growth",
+      "monetization",
+      "roadmap-trade-offs"
+    ]
+  },
+  {
+    "slug": "cto",
+    "label": "CTO and engineering",
+    "categories": [
+      "infrastructure-capacity",
+      "cloud-unit-economics",
+      "reliability-and-availability",
+      "latency-and-performance",
+      "engineering-throughput",
+      "technical-debt-economics",
+      "build-versus-buy",
+      "scaling-laws",
+      "energy-and-power",
+      "architecture-trade-offs"
+    ]
+  },
+  {
+    "slug": "cio",
+    "label": "CIO, data, and AI",
+    "categories": [
+      "systems-utilization",
+      "automation-returns",
+      "data-quality",
+      "model-precision-and-recall",
+      "ai-inference-economics",
+      "storage-and-compute-growth",
+      "vendor-economics",
+      "migration-planning",
+      "cybersecurity-exposure",
+      "technology-portfolio-value"
+    ]
+  },
+  {
+    "slug": "chro",
+    "label": "CHRO and people",
+    "categories": [
+      "headcount-planning",
+      "hiring-funnels",
+      "attrition-and-retention",
+      "compensation",
+      "span-of-control",
+      "workforce-productivity",
+      "training-returns",
+      "absence-and-utilization",
+      "diversity-representation",
+      "organizational-cost"
+    ]
+  },
+  {
+    "slug": "supply_chain",
+    "label": "Supply chain and procurement",
+    "categories": [
+      "demand-planning",
+      "inventory-levels",
+      "supplier-pricing",
+      "purchase-volume-discounts",
+      "logistics-costs",
+      "lead-times",
+      "safety-stock",
+      "production-yield",
+      "make-versus-buy",
+      "supplier-risk"
+    ]
+  },
+  {
+    "slug": "risk",
+    "label": "Chief risk officer",
+    "categories": [
+      "probability-of-loss",
+      "expected-loss",
+      "exposure-concentration",
+      "scenario-analysis",
+      "conditional-probability",
+      "sensitivity-and-stress-tests",
+      "insurance-economics",
+      "credit-risk",
+      "operational-risk",
+      "risk-adjusted-returns"
+    ]
+  }
+]

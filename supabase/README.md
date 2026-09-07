@@ -11,3 +11,11 @@ Database schema changes belong in `migrations/` and are applied with the Supabas
 5. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_PUBLISHABLE_KEY` to the Railway web service. The Dockerfile declares both as build arguments because Vite embeds them during the build. Never add a Supabase secret or service-role key to the web service.
 
 Use separate Google OAuth clients and Supabase projects for production and non-production environments.
+
+## Executive question metadata
+
+The taxonomy migration leaves legacy rows and attempt references unchanged. Executive rows require a valid track/category pair, difficulty 1 to 3, friendliness 1 to 5, a positive operation count and a publication status. Legacy difficulty remains 1 to 5. The controlled taxonomy is also recorded in `apps/web/src/features/training/executive-taxonomy.json`.
+
+Only active published executive questions and active legacy questions are available for new practice. Retired questions remain readable to users who have attempted them, preserving session review. Draft and approved rows are hidden from browser clients. Existing grants prohibit browser publishing.
+
+`practice_sessions.selected_tracks` records session intent; historical sessions retain null. Apply migrations locally with `supabase migration up --local`, then run `supabase test db`. Production migrations require review, merge and explicit deployment authorization.
