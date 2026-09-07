@@ -46,6 +46,12 @@ describe("getStarterQuestions", () => {
     expect(databaseMock.query.order).toHaveBeenNthCalledWith(2, "id", { ascending: false })
     expect(databaseMock.query.limit).toHaveBeenCalledWith(20)
     expect(questions).toHaveLength(1)
+    expect(questions[0]).toMatchObject({ executiveTrack: null, publicationStatus: null, answer: 3.33 })
+  })
+
+  it("maps executive metadata without changing numeric answers", async () => {
+    databaseMock.query.data = [{ ...databaseMock.row, executive_track: "ceo", category_slug: "capital-allocation", publication_status: "published", number_friendliness: 2, operation_count: 3 }]
+    expect((await getStarterQuestions())[0]).toMatchObject({ executiveTrack: "ceo", categorySlug: "capital-allocation", publicationStatus: "published", numberFriendliness: 2, operationCount: 3, answer: 3.33 })
   })
 })
 

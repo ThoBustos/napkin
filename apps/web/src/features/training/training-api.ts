@@ -1,9 +1,15 @@
 import { supabase } from "@/lib/supabase"
+import type { ExecutiveTrack, PublicationStatus } from "./executive-tracks"
 import { calculateTrainingSummary } from "./training-metrics"
 import { nextWeekStartKey, weekStartKey, type WeeklyGoalPlan, type WeeklyGoalSetting, type WeeklyGoalTarget } from "./weekly-goals"
 
 export interface TrainingQuestion {
   id: string
+  executiveTrack: ExecutiveTrack | null
+  categorySlug: string | null
+  numberFriendliness: number | null
+  operationCount: number | null
+  publicationStatus: PublicationStatus | null
   category: string
   difficulty: number
   prompt: string
@@ -82,6 +88,11 @@ export async function scheduleWeeklyGoal(userId: string, target: WeeklyGoalTarge
 
 interface QuestionRow {
   id: string
+  executive_track: ExecutiveTrack | null
+  category_slug: string | null
+  number_friendliness: number | null
+  operation_count: number | null
+  publication_status: PublicationStatus | null
   category: string
   difficulty: number
   prompt: string
@@ -97,7 +108,7 @@ export async function getStarterQuestions(limit = 20): Promise<TrainingQuestion[
 
   const { data, error } = await supabase
     .from("questions")
-    .select("id, category, difficulty, prompt, instruction, unit, correct_answer, answer_tolerance, hint")
+    .select("id, category, difficulty, prompt, instruction, unit, correct_answer, answer_tolerance, hint, executive_track, category_slug, number_friendliness, operation_count, publication_status")
     .eq("is_active", true)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
@@ -107,6 +118,11 @@ export async function getStarterQuestions(limit = 20): Promise<TrainingQuestion[
 
   return shuffle(data as QuestionRow[]).map((question) => ({
     id: question.id,
+    executiveTrack: question.executive_track ?? null,
+    categorySlug: question.category_slug ?? null,
+    numberFriendliness: question.number_friendliness ?? null,
+    operationCount: question.operation_count ?? null,
+    publicationStatus: question.publication_status ?? null,
     category: question.category,
     difficulty: question.difficulty,
     prompt: question.prompt,
@@ -118,11 +134,11 @@ export async function getStarterQuestions(limit = 20): Promise<TrainingQuestion[
   }))
 }
 
-export async function startPracticeSession(userId: string, requestedDurationMinutes: number) {
+export async function startPracticeSession(userId: string, requestedDurationMinutes: number, selectedTracks?: readonly ExecutiveTrack[]) {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
   const { data, error } = await supabase
     .from("practice_sessions")
-    .insert({ user_id: userId, requested_duration_minutes: requestedDurationMinutes })
+    .insert({ user_id: userId, requested_duration_minutes: requestedDurationMinutes, ...(selectedTracks ? { selected_tracks: selectedTracks } : {}) })
     .select("id")
     .single()
   if (error) throw error
