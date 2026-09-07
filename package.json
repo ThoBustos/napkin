@@ -9,7 +9,7 @@
     "dev": "pnpm --filter @napkin/web dev",
     "build": "pnpm --filter @napkin/web build",
     "lint": "pnpm --filter @napkin/web lint",
-    "test": "pnpm --filter @napkin/web test"
+    "test": "pnpm catalog:validate && node --test scripts/validate-executive-catalog.test.mjs && pnpm --filter @napkin/web test",
+    "catalog:validate": "node scripts/validate-executive-catalog.mjs"
   }
 }
-
