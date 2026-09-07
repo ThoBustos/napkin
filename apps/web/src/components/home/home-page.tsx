@@ -38,7 +38,7 @@ export function HomePage() {
   })
   const historyQuery = useQuery({
     queryKey: ["session-history", user?.id],
-    queryFn: () => getSessionHistory(user!.id),
+    queryFn: getSessionHistory,
     enabled: Boolean(user),
     refetchOnMount: "always",
   })

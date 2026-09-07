@@ -37,12 +37,12 @@ const databaseMock = vi.hoisted(() => {
   query.range.mockReturnValue(query)
   query.insert.mockReturnValue(query)
   query.single.mockResolvedValue({ data: { id: "session-1" }, error: null })
-  return { from: vi.fn(() => query), query, row }
+  return { from: vi.fn(() => query), rpc: vi.fn(() => query), query, row }
 })
 
 vi.mock("@/lib/supabase", () => ({ supabase: databaseMock }))
 
-import { getSessionHistory, getStarterQuestions, startPracticeSession } from "./training-api"
+import { getSessionHistory, getStarterQuestions, recordPracticeAttempt, startPracticeSession } from "./training-api"
 
 describe("getStarterQuestions", () => {
   beforeEach(() => {
@@ -60,12 +60,13 @@ describe("getStarterQuestions", () => {
     expect(databaseMock.query.order).toHaveBeenCalledWith("id", { ascending: true })
     expect(databaseMock.query.range).toHaveBeenCalledWith(0, 499)
     expect(questions).toHaveLength(1)
-    expect(questions[0]).toMatchObject({ executiveTrack: null, publicationStatus: null, answer: 3.33 })
+    expect(questions[0]).toMatchObject({ executiveTrack: null, publicationStatus: null })
+    expect(questions[0]).not.toHaveProperty("answer")
   })
 
   it("maps executive metadata without changing numeric answers", async () => {
     databaseMock.query.data = [{ ...databaseMock.row, executive_track: "ceo", category_slug: "capital-allocation", publication_status: "published", number_friendliness: 2, operation_count: 3 }]
-    expect((await getStarterQuestions())[0]).toMatchObject({ executiveTrack: "ceo", categorySlug: "capital-allocation", publicationStatus: "published", numberFriendliness: 2, operationCount: 3, answer: 3.33 })
+    expect((await getStarterQuestions())[0]).toMatchObject({ executiveTrack: "ceo", categorySlug: "capital-allocation", publicationStatus: "published", numberFriendliness: 2, operationCount: 3 })
   })
 
   it("paginates instead of treating a database page as pool exhaustion", async () => {
@@ -96,22 +97,37 @@ describe("getStarterQuestions", () => {
 describe("getSessionHistory", () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it("reads the question from a many-to-one PostgREST relation", async () => {
+  it("maps ownership-filtered history returned by the database", async () => {
     databaseMock.query.data = [{
-      id: "session-1",
+      session_id: "session-1",
       started_at: "2026-08-31T09:00:00Z",
       completed_at: "2026-08-31T09:10:00Z",
-      attempts: [
-        { question_id: "question-1", attempt_number: 1, submitted_answer: 10, is_correct: false, used_hint: false, questions: { id: "question-1", prompt: "Revenue question", unit: "%", correct_answer: 20 } },
-        { question_id: "question-1", attempt_number: 2, submitted_answer: 20, is_correct: true, used_hint: true, questions: { id: "question-1", prompt: "Revenue question", unit: "%", correct_answer: 20 } },
-      ],
+      question_id: "question-1", attempt_number: 1, submitted_answer: 10,
+      is_correct: false, used_hint: false, prompt: "Revenue question", unit: "%", correct_answer: 20,
+    }, {
+      session_id: "session-1",
+      started_at: "2026-08-31T09:00:00Z",
+      completed_at: "2026-08-31T09:10:00Z",
+      question_id: "question-1", attempt_number: 2, submitted_answer: 20,
+      is_correct: true, used_hint: true, prompt: "Revenue question", unit: "%", correct_answer: 20,
     }]
 
-    await expect(getSessionHistory("user-1")).resolves.toMatchObject([{
+    await expect(getSessionHistory()).resolves.toMatchObject([{
       solved: 1,
       accuracy: "0%",
       averageAttempts: "2.0",
       questions: [{ correctAnswer: 20, submittedAnswer: 20, attempts: 2, firstTry: false, usedHint: true }],
     }])
+  })
+})
+
+describe("recordPracticeAttempt", () => {
+  it("delegates scoring and attempt numbering to the database", async () => {
+    databaseMock.query.single.mockResolvedValueOnce({ data: { is_correct: true, correct_answer: 20, attempt_number: 2 }, error: null })
+    await expect(recordPracticeAttempt({ sessionId: "session-1", questionId: "question-1", submittedAnswer: 20, usedHint: true, responseTimeMs: 1000 })).resolves.toEqual({ isCorrect: true, correctAnswer: 20, attemptNumber: 2 })
+    expect(databaseMock.rpc).toHaveBeenCalledWith("submit_practice_attempt", {
+      p_session_id: "session-1", p_question_id: "question-1", p_submitted_answer: 20,
+      p_used_hint: true, p_response_time_ms: 1000,
+    })
   })
 })

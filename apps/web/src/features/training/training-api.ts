@@ -16,20 +16,21 @@ export interface TrainingQuestion {
   prompt: string
   instruction: string
   unit: string
-  answer: number
-  tolerance: number
   hint: string
 }
 
 export interface PracticeAttemptInput {
   sessionId: string
   questionId: string
-  userId: string
-  attemptNumber: number
   submittedAnswer: number
-  isCorrect: boolean
   usedHint: boolean
   responseTimeMs: number
+}
+
+export interface PracticeAttemptResult {
+  isCorrect: boolean
+  correctAnswer: number
+  attemptNumber: number
 }
 
 export interface SessionQuestionReview {
@@ -99,8 +100,6 @@ interface QuestionRow {
   prompt: string
   instruction: string
   unit: string
-  correct_answer: number
-  answer_tolerance: number
   hint: string
 }
 
@@ -111,7 +110,7 @@ export async function getStarterQuestions(selectedTracks: readonly ExecutiveTrac
   const pageSize = 500
   for (let offset = 0; ; offset += pageSize) {
     const { data, error } = await supabase.from("questions")
-      .select("id, category, difficulty, prompt, instruction, unit, correct_answer, answer_tolerance, hint, executive_track, category_slug, number_friendliness, operation_count, publication_status")
+      .select("id, category, difficulty, prompt, instruction, unit, hint, executive_track, category_slug, number_friendliness, operation_count, publication_status")
       .eq("is_active", true)
       .or(`and(publication_status.eq.published,executive_track.in.(${tracks.join(",")})),and(executive_track.is.null,publication_status.is.null)`)
       .order("id", { ascending: true })
@@ -140,8 +139,6 @@ export async function getStarterQuestions(selectedTracks: readonly ExecutiveTrac
     prompt: question.prompt,
     instruction: question.instruction,
     unit: question.unit,
-    answer: Number(question.correct_answer),
-    tolerance: Number(question.answer_tolerance),
     hint: question.hint,
   }))
   return orderPracticeQuestions(questions, tracks, recentIds)
@@ -158,19 +155,22 @@ export async function startPracticeSession(userId: string, requestedDurationMinu
   return data.id as string
 }
 
-export async function recordPracticeAttempt(input: PracticeAttemptInput) {
+export async function recordPracticeAttempt(input: PracticeAttemptInput): Promise<PracticeAttemptResult> {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
-  const { error } = await supabase.from("attempts").insert({
-    session_id: input.sessionId,
-    question_id: input.questionId,
-    user_id: input.userId,
-    attempt_number: input.attemptNumber,
-    submitted_answer: input.submittedAnswer,
-    is_correct: input.isCorrect,
-    used_hint: input.usedHint,
-    response_time_ms: input.responseTimeMs,
-  })
+  const { data, error } = await supabase.rpc("submit_practice_attempt", {
+    p_session_id: input.sessionId,
+    p_question_id: input.questionId,
+    p_submitted_answer: input.submittedAnswer,
+    p_used_hint: input.usedHint,
+    p_response_time_ms: input.responseTimeMs,
+  }).single()
   if (error) throw error
+  const result = data as { is_correct: boolean; correct_answer: number; attempt_number: number }
+  return {
+    isCorrect: result.is_correct,
+    correctAnswer: Number(result.correct_answer),
+    attemptNumber: result.attempt_number,
+  }
 }
 
 export async function finishPracticeSession(sessionId: string, status: "completed" | "abandoned") {
@@ -237,44 +237,43 @@ export async function getTrainingSummary(userId: string) {
   )
 }
 
-export async function getSessionHistory(userId: string): Promise<TrainingSessionHistory[]> {
+export async function getSessionHistory(): Promise<TrainingSessionHistory[]> {
   if (!supabase) throw new Error("Training is not configured for this deployment.")
-  const { data, error } = await supabase
-    .from("practice_sessions")
-    .select("id, started_at, completed_at, attempts(question_id, attempt_number, submitted_answer, is_correct, used_hint, questions(id, prompt, unit, correct_answer))")
-    .eq("user_id", userId)
-    .eq("status", "completed")
-    .order("started_at", { ascending: false })
+  const { data, error } = await supabase.rpc("get_practice_history")
   if (error) throw error
 
-  return (data ?? []).map(toSessionHistory)
+  const sessions = new Map<string, HistoryRow[]>()
+  for (const row of (data ?? []) as HistoryRow[]) {
+    sessions.set(row.session_id, [...(sessions.get(row.session_id) ?? []), row])
+  }
+  return [...sessions.values()].map(toSessionHistory)
 }
 
 interface HistoryRow {
-  id: string
+  session_id: string
   started_at: string
   completed_at: string
-  attempts: Array<{
-    question_id: string
-    attempt_number: number
-    submitted_answer: number
-    is_correct: boolean
-    used_hint: boolean
-    questions: { id: string; prompt: string; unit: string; correct_answer: number } | { id: string; prompt: string; unit: string; correct_answer: number }[] | null
-  }>
+  question_id: string
+  attempt_number: number
+  submitted_answer: number
+  is_correct: boolean
+  used_hint: boolean
+  prompt: string
+  unit: string
+  correct_answer: number
 }
 
-function toSessionHistory(session: HistoryRow): TrainingSessionHistory {
-  const grouped = new Map<string, HistoryRow["attempts"]>()
-  session.attempts.forEach((attempt) => grouped.set(attempt.question_id, [...(grouped.get(attempt.question_id) ?? []), attempt]))
+function toSessionHistory(attempts: HistoryRow[]): TrainingSessionHistory {
+  const session = attempts[0]
+  const grouped = new Map<string, HistoryRow[]>()
+  attempts.forEach((attempt) => grouped.set(attempt.question_id, [...(grouped.get(attempt.question_id) ?? []), attempt]))
   const questions = [...grouped.values()].flatMap((questionAttempts) => {
     const ordered = [...questionAttempts].sort((a, b) => a.attempt_number - b.attempt_number)
-    const relation = ordered[0]?.questions
-    const question = Array.isArray(relation) ? relation[0] : relation
+    const question = ordered[0]
     const finalAttempt = ordered.at(-1)
     if (!question || !finalAttempt) return []
     return [{
-      id: question.id,
+      id: question.question_id,
       prompt: question.prompt,
       unit: question.unit,
       correctAnswer: Number(question.correct_answer),
@@ -289,7 +288,7 @@ function toSessionHistory(session: HistoryRow): TrainingSessionHistory {
   const elapsedMinutes = Math.max(1, Math.round((new Date(session.completed_at).getTime() - new Date(session.started_at).getTime()) / 60_000))
 
   return {
-    id: session.id,
+    id: session.session_id,
     date: new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(new Date(session.completed_at)),
     duration: `${elapsedMinutes} min`,
     solved: questions.length,
