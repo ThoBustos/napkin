@@ -1,12 +1,10 @@
-import { useRef, useState } from "react"
-import { Pause, Play } from "lucide-react"
+import { useRef } from "react"
 import { useNapkinLight } from "@/hooks/use-napkin-light"
 import paper from "./assets/napkin-light.webp"
 
 export function LightArtwork() {
   const canvas = useRef<HTMLCanvasElement>(null)
-  const [paused, setPaused] = useState(false)
-  useNapkinLight(canvas, paper, paused)
+  useNapkinLight(canvas, paper)
 
   return (
     <div className="light-artwork">
@@ -21,19 +19,6 @@ export function LightArtwork() {
         />
         <canvas ref={canvas} />
       </div>
-      <button
-        type="button"
-        className="light-motion-toggle"
-        onClick={() => setPaused(!paused)}
-        aria-label={paused ? "Enable artwork motion" : "Pause artwork motion"}
-        aria-pressed={paused}
-      >
-        {paused ? (
-          <Play size={16} aria-hidden="true" />
-        ) : (
-          <Pause size={16} aria-hidden="true" />
-        )}
-      </button>
     </div>
   )
 }

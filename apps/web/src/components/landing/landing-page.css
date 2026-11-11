@@ -84,27 +84,6 @@
 .light-artwork-image canvas[data-ready="true"] {
   opacity: 1;
 }
-.light-motion-toggle {
-  position: absolute;
-  right: 8%;
-  bottom: 1%;
-  display: grid;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid #e2e3e0;
-  border-radius: 50%;
-  background: white;
-  color: var(--ink);
-  cursor: pointer;
-}
-.light-motion-toggle:hover {
-  background: #f8f9fb;
-}
-.light-motion-toggle:focus-visible {
-  outline: 2px solid var(--cobalt);
-  outline-offset: 4px;
-}
 @media (max-width: 1000px) {
   .light-landing .site-header {
     height: 105px;
@@ -192,10 +171,7 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .light-artwork-image canvas,
-  .light-motion-toggle {
-    display: none;
-  }
+  .light-artwork-image canvas { display: none; }
 }
 
 @media (max-width: 700px) {

@@ -3,7 +3,6 @@ import { useEffect, type RefObject } from "react"
 export function useNapkinLight(
   ref: RefObject<HTMLCanvasElement | null>,
   source: string,
-  paused: boolean,
 ) {
   useEffect(() => {
     const canvas = ref.current
@@ -92,7 +91,6 @@ export function useNapkinLight(
     const draw = (now: number) => {
       frame = 0
       const animate =
-        !paused &&
         !reduced.matches &&
         visible &&
         !document.hidden &&
@@ -127,7 +125,7 @@ export function useNapkinLight(
       restart()
     }
     const move = (e: PointerEvent) => {
-      if (!fine.matches || paused || reduced.matches) return
+      if (!fine.matches || reduced.matches) return
       const b = canvas.getBoundingClientRect()
       tx = (e.clientX - b.left) / b.width
       ty = 1 - (e.clientY - b.top) / b.height
@@ -177,5 +175,5 @@ export function useNapkinLight(
       gl.deleteShader(vertex)
       gl.deleteShader(fragment)
     }
-  }, [ref, source, paused])
+  }, [ref, source])
 }
