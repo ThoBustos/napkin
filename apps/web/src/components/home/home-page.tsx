@@ -87,7 +87,7 @@ export function HomePage() {
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span>{!isSummaryLoading && <div className="account-training"><strong>{summary.weeklyGoal === 1 ? "1 day per week" : tierForTarget(summary.weeklyGoal)}</strong><span>Best streak: {summary.bestDailyStreak} {summary.bestDailyStreak === 1 ? "day" : "days"}</span></div>}<DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
+                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span>{!isSummaryLoading && <div className="account-training"><strong>{summary.weeklyGoal === 1 ? "1 day per week" : tierForTarget(summary.weeklyGoal)}</strong></div>}<DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
               </div>
             </DropdownMenu>
           </div>

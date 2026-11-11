@@ -4,24 +4,15 @@ import { afterEach, expect, it, vi } from "vitest"
 import { ExecutiveFocus } from "./executive-focus"
 import { allTracks } from "@/features/training/executive-tracks"
 afterEach(cleanup)
-it("checks every topic for All and applies a custom subset", () => {
-  const onChange = vi.fn()
-  render(<ExecutiveFocus tracks={allTracks} onChange={onChange} disabled={false} loading={false} />)
-  fireEvent.click(screen.getByRole("button", {name: "More +"}))
-  expect(screen.getAllByRole("checkbox").every(input => (input as HTMLInputElement).checked)).toBe(true)
-  fireEvent.click(screen.getByRole("checkbox", {name: /Product/}))
-  expect((screen.getByRole("checkbox", {name: /All topics/}) as HTMLInputElement).checked).toBe(false)
-  fireEvent.click(screen.getByRole("button", {name: "Use 10 topics"}))
-  expect(onChange).toHaveBeenCalledWith(allTracks.filter(track => track !== "cpo"))
-})
-it("cancels edits and prevents applying no topics", () => {
-  const onChange = vi.fn()
-  render(<ExecutiveFocus tracks={allTracks} onChange={onChange} disabled={false} loading={false} />)
-  fireEvent.click(screen.getByRole("button", {name: "More +"}))
-  fireEvent.click(screen.getByRole("checkbox", {name: /All topics/}))
-  expect((screen.getByRole("button", {name: "Use 0 topics"}) as HTMLButtonElement).disabled).toBe(true)
-  fireEvent.click(screen.getByRole("button", {name: "Close topic picker"}))
-  expect(onChange).not.toHaveBeenCalled()
+it("expands inline and preserves selected extra topics after collapsing", () => {
+  render(<ExecutiveFocus tracks={["risk"]} onChange={vi.fn()} disabled={false} loading={false} />)
+  fireEvent.click(screen.getByRole("button", {name:"More +"}))
+  expect(screen.queryByRole("dialog")).toBeNull()
+  expect(screen.getByRole("button", {name:"Risk"}).getAttribute("aria-pressed")).toBe("true")
+  fireEvent.click(screen.getByRole("button", {name:"Show less −"}))
+  expect(screen.queryByRole("button", {name:"Risk"})).toBeNull()
+  fireEvent.click(screen.getByRole("button", {name:"More +"}))
+  expect(screen.getByRole("button", {name:"Risk"}).getAttribute("aria-pressed")).toBe("true")
 })
 
 it("keeps Technology in place after deselection from All", () => {
