@@ -1,3 +1,4 @@
+import { identifyAnalytics, track } from "@/features/analytics/analytics"
 import type { User } from "@supabase/supabase-js"
 import { useSyncExternalStore } from "react"
 import { isSupabaseConfigured, supabase } from "@/lib/supabase"
@@ -28,6 +29,10 @@ function subscribe(listener: () => void) {
 
 if (supabase) {
   supabase.auth.onAuthStateChange((_event, session) => {
+    identifyAnalytics(session?.user.id ?? null)
+    if (_event === "SIGNED_IN" && window.location.pathname === "/auth/callback") {
+      track("sign_in_completed")
+    }
     publish({
       status: session?.user ? "authenticated" : "unauthenticated",
       user: session?.user ?? null,
@@ -42,6 +47,7 @@ export function useAuth() {
 export async function signInWithGoogle() {
   if (!supabase) throw new Error("Supabase is not configured.")
 
+  track("sign_in_started")
   const { error } = await supabase.auth.signInWithOAuth({
     provider: "google",
     options: { redirectTo: `${window.location.origin}/auth/callback` },
@@ -54,6 +60,7 @@ export async function signOut() {
   if (!supabase) return
   const { error } = await supabase.auth.signOut({ scope: "local" })
   if (error) throw error
+  identifyAnalytics(null)
 }
 
 export async function updateDisplayName(name: string) {

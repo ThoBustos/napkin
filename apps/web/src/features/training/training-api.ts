@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics/analytics"
 import { supabase } from "@/lib/supabase"
 import { allTracks, normalizeTracks, type ExecutiveTrack, type PublicationStatus } from "./executive-tracks"
 import { orderPracticeQuestions } from "./question-selection"
@@ -152,6 +153,7 @@ export async function startPracticeSession(userId: string, requestedDurationMinu
     .select("id")
     .single()
   if (error) throw error
+  track("practice_started", { session_id: data.id, duration_minutes: requestedDurationMinutes, topics: selectedTracks ?? [], $insert_id: `practice-start-${data.id}` })
   return data.id as string
 }
 
@@ -181,6 +183,7 @@ export async function finishPracticeSession(sessionId: string, status: "complete
     .eq("id", sessionId)
     .eq("status", "active")
   if (error) throw error
+  track(status === "completed" ? "practice_completed" : "practice_abandoned", { session_id: sessionId, $insert_id: `practice-end-${sessionId}` })
 }
 
 export async function getPracticeSessionResult(sessionId: string, userId: string): Promise<PracticeSessionResult> {
