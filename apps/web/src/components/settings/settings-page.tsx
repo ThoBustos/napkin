@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { ArrowLeft, Flame } from "lucide-react"
 import { Link } from "react-router-dom"
-import { BrandMark } from "@/components/brand/brand-mark"
+import { NapkinIdentity } from "@/components/brand/napkin-identity"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/features/auth/auth-store"
 import { getWeeklyGoalPlan, scheduleWeeklyGoal } from "@/features/training/training-api"
@@ -48,7 +48,7 @@ export function SettingsPage() {
   return (
     <main className="settings-shell">
       <div className="settings-page">
-        <header><BrandMark href="/home" /><Link to="/home"><ArrowLeft aria-hidden="true" /> Back home</Link></header>
+        <header><NapkinIdentity href="/home" /><Link to="/home"><ArrowLeft aria-hidden="true" /> Back home</Link></header>
         <section className="settings-card" aria-labelledby="weekly-goal-title">
           <Flame aria-hidden="true" />
           <span>Weekly commitment</span>

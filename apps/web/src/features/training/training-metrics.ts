@@ -23,6 +23,7 @@ export interface TrainingSummary {
   firstTryRate: number
   minutesThisWeek: number
   totalMinutes: number
+  bestDailyStreak: number
   streak: number
   weeklyGoal: 1 | 3 | 5 | 7
   weeklyProgress: number
@@ -38,6 +39,7 @@ export const emptyTrainingSummary: TrainingSummary = {
   firstTryRate: 0,
   minutesThisWeek: 0,
   totalMinutes: 0,
+  bestDailyStreak: 0,
   streak: 0,
   weeklyGoal: 3,
   weeklyProgress: 0,
@@ -72,6 +74,7 @@ export function calculateTrainingSummary(sessions: CompletedSession[], attempts:
     firstTryRate: attemptedKeys.size > 0 ? Math.round((firstTrySolved.size / attemptedKeys.size) * 100) : 0,
     minutesThisWeek: Math.round(weekMs / 60_000),
     totalMinutes,
+    bestDailyStreak: calculateBestDailyStreak(sessions, now),
     streak: calculateWeeklyStreak(sessions, goals, now),
     weeklyGoal,
     weeklyProgress,
@@ -129,4 +132,21 @@ function calculateWeeklyStreak(sessions: CompletedSession[], goals: GoalMetric[]
     cursor.setUTCDate(cursor.getUTCDate() - 7)
   }
   return streak
+}
+
+// Match the dashboard's local calendar days, using UTC day ordinals to avoid DST gaps.
+function calculateBestDailyStreak(sessions: CompletedSession[], now: Date) {
+  const days = new Set<number>()
+  for (const session of sessions) {
+    const date = new Date(session.completed_at)
+    if (!Number.isFinite(date.getTime()) || date > now) continue
+    days.add(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86_400_000)
+  }
+  let best = 0, run = 0, previous = -Infinity
+  for (const day of [...days].sort((a, b) => a - b)) {
+    run = day === previous + 1 ? run + 1 : 1
+    best = Math.max(best, run)
+    previous = day
+  }
+  return best
 }

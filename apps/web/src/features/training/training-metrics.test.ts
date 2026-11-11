@@ -79,3 +79,17 @@ describe("calculateTrainingSummary", () => {
     })
   })
 })
+
+it("counts distinct consecutive practice days, preserving the best run after a gap", () => {
+  const dates = ["2026-08-03", "2026-08-04", "2026-08-04", "2026-08-05", "2026-08-09", "2026-08-10", "2027-01-01"]
+  const sessions = dates.map((date, i) => ({id: String(i), started_at: `${date}T12:00:00`, completed_at: `${date}T12:05:00`}))
+  const summary = calculateTrainingSummary(sessions, [], [], new Date("2026-09-08T12:00:00"))
+  expect(summary.bestDailyStreak).toBe(3)
+  expect(summary.streak).toBe(0)
+})
+
+it("handles empty histories and consecutive days across month boundaries", () => {
+  expect(calculateTrainingSummary([], []).bestDailyStreak).toBe(0)
+  const sessions = ["2026-08-31", "2026-09-01"].map((date, i) => ({id: String(i), started_at: `${date}T12:00:00`, completed_at: `${date}T12:05:00`}))
+  expect(calculateTrainingSummary(sessions, [], [], new Date("2026-09-08T12:00:00")).bestDailyStreak).toBe(2)
+})

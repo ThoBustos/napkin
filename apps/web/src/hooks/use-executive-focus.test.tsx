@@ -66,3 +66,22 @@ it("does not save an unchanged selection", async () => {
   act(() => result.current.save())
   expect(api.savePreferredTracks).not.toHaveBeenCalled()
 })
+
+it("persists chip selections immediately", async () => {
+  const { result, client } = setup()
+  await waitFor(() => expect(result.current.isReady).toBe(true))
+  act(() => result.current.persist(["cpo", "cmo"]))
+  await waitFor(() => expect(api.savePreferredTracks).toHaveBeenCalledWith("user-1", ["cmo", "cpo"]))
+  await waitFor(() => expect(client.getQueryData(["preferred-tracks", "user-1"])).toEqual(["cmo", "cpo"]))
+})
+
+it("keeps an empty selection locally without persisting it as All", async () => {
+  const { result } = setup()
+  await waitFor(() => expect(result.current.isReady).toBe(true))
+  act(() => result.current.persist([]))
+  expect(result.current.tracks).toEqual([])
+  act(() => result.current.save())
+  expect(api.savePreferredTracks).not.toHaveBeenCalled()
+  act(() => result.current.persist(["risk"]))
+  await waitFor(() => expect(api.savePreferredTracks).toHaveBeenCalledWith("user-1", ["risk"]))
+})
