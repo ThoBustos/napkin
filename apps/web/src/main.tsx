@@ -11,6 +11,6 @@ const app = (
     <App />
   </StrictMode>
 )
-// Vite development serves an empty root; only the production build is prerendered.
-if (import.meta.env.DEV) createRoot(root).render(app)
+// Only the landing route has matching prerendered HTML.
+if (import.meta.env.DEV || window.location.pathname !== "/") createRoot(root).render(app)
 else hydrateRoot(root, app)
