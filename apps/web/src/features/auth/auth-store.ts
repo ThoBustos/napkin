@@ -55,3 +55,11 @@ export async function signOut() {
   const { error } = await supabase.auth.signOut({ scope: "local" })
   if (error) throw error
 }
+
+export async function updateDisplayName(name: string) {
+  if (!supabase) throw new Error("Supabase is not configured.")
+  const fullName = name.trim()
+  if (!fullName || fullName.length > 80) throw new Error("Enter a name between 1 and 80 characters.")
+  const { error } = await supabase.auth.updateUser({ data: { full_name: fullName } })
+  if (error) throw error
+}

@@ -6,12 +6,12 @@ import { allTracks } from "@/features/training/executive-tracks"
 afterEach(cleanup)
 it("expands inline and preserves selected extra topics after collapsing", () => {
   render(<ExecutiveFocus tracks={["risk"]} onChange={vi.fn()} disabled={false} loading={false} />)
-  fireEvent.click(screen.getByRole("button", {name:"More +"}))
+  fireEvent.click(screen.getByRole("button", {name:"Show more"}))
   expect(screen.queryByRole("dialog")).toBeNull()
   expect(screen.getByRole("button", {name:"Risk"}).getAttribute("aria-pressed")).toBe("true")
-  fireEvent.click(screen.getByRole("button", {name:"Show less −"}))
+  fireEvent.click(screen.getByRole("button", {name:"Show less"}))
   expect(screen.queryByRole("button", {name:"Risk"})).toBeNull()
-  fireEvent.click(screen.getByRole("button", {name:"More +"}))
+  fireEvent.click(screen.getByRole("button", {name:"Show more"}))
   expect(screen.getByRole("button", {name:"Risk"}).getAttribute("aria-pressed")).toBe("true")
 })
 

@@ -546,3 +546,20 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .account-training > strong { font-size: 16px; }
 .account-menu button { min-height: 38px; }
 .focus-chips .focus-expand { border-color: transparent; text-decoration: underline; text-underline-offset: 4px; }
+
+.focus-chips .focus-expand,
+.focus-chips .focus-expand:hover:not(:disabled) {
+  border: 0; border-radius: 0; background: transparent; box-shadow: none;
+  text-decoration: none; padding-inline: 8px;
+}
+.focus-chips .focus-expand:hover:not(:disabled) { color: var(--cobalt); }
+.account-menu > a { display: flex; align-items: center; min-height: 38px; padding: 0 10px; border-radius: 7px; color: var(--ink); }
+.account-menu > a:hover, .account-menu > a[data-highlighted] { background: #f7f6f2; }
+.account-settings { max-width: 620px; margin-inline: auto; }
+.account-settings form { display: grid; gap: 12px; margin-top: 32px; }
+.account-settings label { font-weight: 650; }
+.account-settings input { width: 100%; min-height: 46px; padding: 10px 14px; border: 1px solid var(--line); border-radius: 8px; color: var(--ink); background: transparent; }
+.account-settings input:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 3px; }
+.account-settings input + label { margin-top: 12px; }
+.account-settings form p { margin: 0; color: var(--ink); font-size: 14px; }
+.account-settings form button { justify-self: start; margin-top: 12px; }

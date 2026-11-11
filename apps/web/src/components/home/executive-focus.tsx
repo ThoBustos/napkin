@@ -13,7 +13,7 @@ export function ExecutiveFocus({ tracks, onChange, disabled, loading }: { tracks
     <div id="practice-focus-chips" className="focus-chips" role="group" aria-labelledby="practice-focus-label">
       <button type="button" disabled={disabled} aria-pressed={isAll} onClick={() => onChange(isAll ? [] : [...allTracks])}>All topics</button>
       {visibleTopics.map(({ slug, label }) => <button key={slug} type="button" disabled={disabled} aria-pressed={tracks.includes(slug)} onClick={() => toggle(slug)}>{label}</button>)}
-      <button className="focus-expand" type="button" aria-expanded={expanded} aria-controls="practice-focus-chips" onClick={() => setExpanded(value => !value)}>{expanded ? "Show less −" : "More +"}</button>
+      <button className="focus-expand" type="button" aria-expanded={expanded} aria-controls="practice-focus-chips" onClick={() => setExpanded(value => !value)}>{expanded ? "Show less" : "Show more"}</button>
     </div>
     {loading && <span className="sr-only">Loading practice focus</span>}
   </div>

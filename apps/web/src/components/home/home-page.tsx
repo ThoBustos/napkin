@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { WeekdayProgress } from "@/components/ui/weekday-progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { signOut, useAuth } from "@/features/auth/auth-store"
 import { getPracticeSessionResult, getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
 import { emptyTrainingSummary } from "@/features/training/training-metrics"
@@ -87,7 +87,7 @@ export function HomePage() {
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span>{!isSummaryLoading && <div className="account-training"><strong>{summary.weeklyGoal === 1 ? "1 day per week" : tierForTarget(summary.weeklyGoal)}</strong></div>}<DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
+                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span>{!isSummaryLoading && <div className="account-training"><strong>{summary.weeklyGoal === 1 ? "1 day per week" : tierForTarget(summary.weeklyGoal)}</strong></div>}<DropdownMenuItem asChild><Link to="/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
               </div>
             </DropdownMenu>
           </div>
