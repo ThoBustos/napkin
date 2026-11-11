@@ -1,6 +1,7 @@
 import { renderToString } from "react-dom/server"
-import { LandingPage } from "@/components/landing/landing-page"
+import { StaticRouter } from "react-router-dom"
+import { AppRoutes } from "./App"
 
 export function render() {
-  return renderToString(<LandingPage />)
+  return renderToString(<StaticRouter location="/"><AppRoutes /></StaticRouter>)
 }
