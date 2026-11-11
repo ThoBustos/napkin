@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
 :root {
+  --font-sans: "DM Sans Variable", sans-serif;
+  --font-serif: "Newsreader Variable", serif;
   --cream: #f6f4ed;
   --paper: #fffefa;
   --ink: #101c35;

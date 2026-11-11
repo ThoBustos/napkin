@@ -1,3 +1,4 @@
+import { useAdminAccess } from "@/hooks/use-admin-access"
 import { useState } from "react"
 import { ArrowRight, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target, Trophy } from "lucide-react"
 import { NapkinIdentity } from "@/components/brand/napkin-identity"
@@ -22,6 +23,7 @@ import { allTracks, type ExecutiveTrack } from "@/features/training/executive-tr
 const durations = [5, 10, 15] as const
 
 export function HomePage() {
+  const admin = useAdminAccess()
   const navigate = useNavigate()
   const location = useLocation()
   const { user } = useAuth()
@@ -87,7 +89,7 @@ export function HomePage() {
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><div className="account-heading"><strong>{fullName}</strong>{!isSummaryLoading && <span className="account-tier">{summary.weeklyGoal === 1 ? "1 day per week" : tierForTarget(summary.weeklyGoal)}</span>}</div><span>{user?.email}</span><DropdownMenuItem asChild><Link to="/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
+                <DropdownMenuContent align="end"><div className="account-heading"><strong>{fullName}</strong>{!isSummaryLoading && <span className="account-tier">{summary.weeklyGoal === 1 ? "1 day per week" : tierForTarget(summary.weeklyGoal)}</span>}</div><span>{user?.email}</span>{admin.data && <DropdownMenuItem asChild><Link to="/admin">Admin</Link></DropdownMenuItem>}<DropdownMenuItem asChild><Link to="/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
               </div>
             </DropdownMenu>
           </div>

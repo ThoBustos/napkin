@@ -5,6 +5,10 @@ import "@fontsource-variable/newsreader/wght.css"
 import App from "./App"
 import "./index.css"
 
+import { initAnalytics } from "./features/analytics/analytics"
+
+initAnalytics()
+
 const root = document.getElementById("root")!
 const app = (
   <StrictMode>

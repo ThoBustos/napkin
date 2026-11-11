@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics/analytics"
 import { ArrowRight } from "lucide-react"
 import { NapkinIdentity } from "@/components/brand/napkin-identity"
 import { LightArtwork } from "./light-artwork"
@@ -16,10 +17,10 @@ export function LandingPage() {
         </nav>
         <div className="header-actions">
           <Button variant="ghost" asChild>
-            <a href="/login">Sign in</a>
+            <a href="/login" onClick={() => track("landing_cta_clicked", { placement: "header", action: "sign_in" })}>Sign in</a>
           </Button>
           <Button asChild>
-            <a href="/login">Start training</a>
+            <a href="/login" onClick={() => track("landing_cta_clicked", { placement: "header", action: "start_training" })}>Start training</a>
           </Button>
         </div>
       </header>
@@ -42,12 +43,12 @@ export function LandingPage() {
           </p>
           <div className="light-hero-actions">
             <Button size="lg" asChild>
-              <a href="/login">
+              <a href="/login" onClick={() => track("landing_cta_clicked", { placement: "hero", action: "start_training" })}>
                 Start training <ArrowRight aria-hidden="true" />
               </a>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <a href="#product">See how it works</a>
+              <a href="#product" onClick={() => track("landing_cta_clicked", { placement: "hero", action: "demo" })}>See how it works</a>
             </Button>
           </div>
         </div>

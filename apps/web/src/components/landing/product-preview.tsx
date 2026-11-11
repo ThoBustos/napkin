@@ -1,3 +1,4 @@
+import { track } from "@/features/analytics/analytics"
 import { type FormEvent, useRef, useState } from "react"
 import { ArrowRight, Check, Clock3, Flame, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -27,6 +28,7 @@ export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewP
 
   function nextQuestion() {
     if (questionIndex === questions.length - 1) {
+      track("demo_completed")
       setResult("complete")
       return
     }
