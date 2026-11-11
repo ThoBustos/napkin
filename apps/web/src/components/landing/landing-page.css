@@ -1,0 +1,186 @@
+.light-landing {
+  background: #fff;
+}
+.light-landing .site-header {
+  width: min(1540px, 90%);
+  height: 128px;
+}
+.light-landing .site-header nav {
+  font-size: 18px;
+}
+.light-landing .site-header .header-actions {
+  gap: 12px;
+}
+.light-landing .site-header .header-actions a {
+  border-radius: 14px;
+  font-size: 16px;
+  height: 56px;
+}
+.light-hero {
+  width: min(1540px, 90%);
+  margin: auto;
+  min-height: min(760px, calc(100svh - 128px));
+  display: grid;
+  grid-template-columns: 1fr 1.12fr;
+  align-items: center;
+  gap: 12px;
+  padding: 30px 0 70px;
+}
+.light-hero h1 {
+  margin: 0 0 30px;
+  font-size: clamp(55px, 6.2vw, 96px);
+  font-weight: 750;
+  letter-spacing: -0.065em;
+  line-height: 1.02;
+}
+.light-hero-copy > p {
+  color: var(--ink);
+  font-size: clamp(20px, 2vw, 28px);
+  line-height: 1.5;
+  letter-spacing: -0.035em;
+  margin: 0 0 38px;
+}
+.light-hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.light-hero-actions a {
+  height: auto;
+  min-height: 62px;
+  border-radius: 14px;
+  font-size: 18px;
+  padding: 16px 27px;
+}
+.light-hero-actions a[href="#product"] {
+  color: var(--ink);
+  border-color: #dddfdb;
+  background: white;
+}
+.light-hero-actions a[href="#product"]:hover {
+  background: #f8f9fb;
+}
+.light-artwork {
+  position: relative;
+  width: 100%;
+  max-width: 700px;
+  justify-self: center;
+}
+.light-artwork-image {
+  position: relative;
+  aspect-ratio: 1;
+}
+.light-artwork-image img,
+.light-artwork-image canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.light-artwork-image canvas {
+  opacity: 0;
+}
+.light-artwork-image canvas[data-ready="true"] {
+  opacity: 1;
+}
+@media (max-width: 1000px) {
+  .light-landing .site-header {
+    height: 105px;
+  }
+  .light-landing .site-header nav {
+    gap: 20px;
+    font-size: 16px;
+  }
+  .light-landing .site-header .header-actions a {
+    padding-inline: 16px;
+    font-size: 14px;
+  }
+  .light-hero {
+    grid-template-columns: 1fr 1fr;
+  }
+  .light-hero h1 {
+    font-size: clamp(46px, 6.5vw, 65px);
+  }
+  .light-hero-actions a {
+    font-size: 16px;
+    padding: 16px 20px;
+  }
+}
+@media (max-width: 700px) {
+  .light-landing .site-header {
+    width: calc(100% - 48px);
+    height: 88px;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+  }
+  .light-landing .site-header nav {
+    display: none;
+  }
+  .light-landing .site-header .header-actions {
+    gap: 5px;
+  }
+  .light-landing .site-header .header-actions a {
+    font-size: 13px;
+    height: 44px;
+    padding-inline: 12px;
+  }
+  .light-landing .site-header .header-actions a::after {
+    content: none;
+  }
+  .light-hero {
+    width: calc(100% - 48px);
+    min-height: 0;
+    grid-template-columns: 1fr;
+    padding: 50px 0 35px;
+    gap: 0;
+  }
+  .light-hero h1 {
+    font-size: clamp(48px, 11.8vw, 74px);
+    margin-bottom: 22px;
+  }
+  .light-hero-copy > p {
+    font-size: 21px;
+    margin-bottom: 25px;
+  }
+  .light-hero-actions {
+    gap: 8px;
+  }
+  .light-hero-actions a {
+    font-size: 14px;
+    padding: 15px 17px;
+    min-height: 54px;
+  }
+  .light-artwork {
+    width: 110%;
+    max-width: none;
+    margin: 12px -5% 0;
+  }
+}
+@media (max-width: 370px) {
+  .light-landing .site-header,
+  .light-hero {
+    width: calc(100% - 32px);
+  }
+  .light-hero {
+    padding-top: 32px;
+  }
+  .light-hero-actions a {
+    font-size: 13px;
+    padding: 13px 15px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .light-artwork-image canvas { display: none; }
+}
+
+@media (max-width: 700px) {
+  .light-landing .napkin-identity {
+    font-size: 26px;
+    gap: 7px;
+  }
+  .light-landing .napkin-identity > svg {
+    width: 37px;
+    height: 37px;
+  }
+}
