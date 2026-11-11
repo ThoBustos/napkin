@@ -18,8 +18,6 @@ select is((public.admin_users('unpracticed@example.com')->'users'->0->>'sessions
 select throws_ok('select public.admin_overview(999)','22023','Invalid reporting period','Period is bounded');
 select throws_ok('select public.admin_users('''',-1)','22023','Invalid pagination','Pagination is bounded');
 reset role;
-set local role anon;
-select throws_ok('select public.admin_users()','42501',null,'Anonymous callers cannot execute reports');
-reset role;
+select is(has_function_privilege('anon', 'public.admin_users(text,integer)', 'EXECUTE'), false, 'Anonymous callers cannot execute reports');
 select * from finish();
 rollback;
