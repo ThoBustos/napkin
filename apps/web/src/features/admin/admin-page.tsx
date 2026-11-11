@@ -116,7 +116,7 @@ export function AdminPage() {
           <h1>A little perspective.</h1>
           <p>Your people. Their practice.</p>
         </div>
-        {allowed && (
+        {allowed && posthogProjectUrl && (
           <a
             className="admin-external"
             href={`${posthogProjectUrl}/web`}
@@ -245,13 +245,15 @@ export function AdminPage() {
               <section className="admin-panel">
                 <div className="admin-section-title">
                   <h2>From curious to practicing.</h2>
-                  <a
-                    href={`${posthogProjectUrl}/insights`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Explore <ArrowUpRight size={16} />
-                  </a>
+                  {posthogProjectUrl && (
+                    <a
+                      href={`${posthogProjectUrl}/insights`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      Explore <ArrowUpRight size={16} />
+                    </a>
+                  )}
                 </div>
                 {traffic.data ? (
                   <>

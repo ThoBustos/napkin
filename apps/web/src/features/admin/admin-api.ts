@@ -29,7 +29,10 @@ export interface Traffic {
   demoVisitors: number
   signedInUsers: number
 }
-export const posthogProjectUrl = `https://us.posthog.com/project/${/^\d+$/.test(import.meta.env.VITE_POSTHOG_PROJECT_ID ?? "") ? import.meta.env.VITE_POSTHOG_PROJECT_ID : "729215"}`
+const posthogProjectId = import.meta.env.VITE_POSTHOG_PROJECT_ID ?? ""
+export const posthogProjectUrl = /^\d+$/.test(posthogProjectId)
+  ? `https://us.posthog.com/project/${posthogProjectId}`
+  : null
 
 export async function checkAdmin() {
   if (!supabase) return false

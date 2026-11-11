@@ -171,7 +171,7 @@
   font-size: 14px;
 }
 .admin-preview {
-  background: #fff2e8;
+  background: var(--cream);
   border: 1px solid var(--orange);
   border-radius: 12px;
   padding: 12px 18px;
