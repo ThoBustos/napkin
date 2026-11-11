@@ -7,6 +7,6 @@ export function NapkinSymbol({ className = "" }: { className?: string }) {
   </svg>
 }
 
-export function NapkinIdentity() {
-  return <a className="napkin-identity" href="/" aria-label="Napkin home"><NapkinSymbol /><span>Napkin</span></a>
+export function NapkinIdentity({ href = "/" }: { href?: string }) {
+  return <a className="napkin-identity" href={href} aria-label="Napkin home"><NapkinSymbol /><span>Napkin</span></a>
 }

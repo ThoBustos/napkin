@@ -39,7 +39,7 @@ export function useExecutiveFocus(userId: string) {
     setDraft({ userId, tracks: normalizeTracks(values) })
   }
   function save() {
-    if (!currentDraft || isSaving) return
+    if (!currentDraft || !currentDraft.tracks.length || isSaving) return
     if (query.data?.join(",") === currentDraft.tracks.join(",")) {
       setDraft(null)
       mutation.reset()
@@ -47,5 +47,12 @@ export function useExecutiveFocus(userId: string) {
     }
     mutation.mutate(currentDraft)
   }
-  return { tracks, choose, save, isSaving, saveFailed, isReady: query.data !== undefined, loadFailed: query.isError, reload: () => { void query.refetch() } }
+  function persist(values: readonly ExecutiveTrack[]) {
+    if (isSaving) return
+    if (!values.length) { mutation.reset(); setDraft({ userId, tracks: [] }); return }
+    const next = { userId, tracks: normalizeTracks(values) }
+    setDraft(next)
+    mutation.mutate(next)
+  }
+  return { tracks, choose, save, persist, isSaving, saveFailed, isReady: query.data !== undefined, loadFailed: query.isError, reload: () => { void query.refetch() } }
 }

@@ -1,71 +1,35 @@
 import { useState } from "react"
-import { ArrowLeft, Flame } from "lucide-react"
+import { useMutation } from "@tanstack/react-query"
+import { ArrowLeft } from "lucide-react"
 import { Link } from "react-router-dom"
-import { BrandMark } from "@/components/brand/brand-mark"
+import { NapkinIdentity } from "@/components/brand/napkin-identity"
+import { GoogleIcon } from "@/components/ui/google-icon"
 import { Button } from "@/components/ui/button"
-import { useAuth } from "@/features/auth/auth-store"
-import { getWeeklyGoalPlan, scheduleWeeklyGoal } from "@/features/training/training-api"
-import { weeklyGoalOptions, type WeeklyGoalPlan, type WeeklyGoalTarget } from "@/features/training/weekly-goals"
-import { useMountEffect } from "@/hooks/use-mount-effect"
+import { updateDisplayName, useAuth } from "@/features/auth/auth-store"
 
 export function SettingsPage() {
   const { user } = useAuth()
-  const [plan, setPlan] = useState<WeeklyGoalPlan | null>(null)
-  const [selected, setSelected] = useState<WeeklyGoalTarget>(3)
-  const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState("")
-  const effectiveTarget = plan?.next?.target ?? plan?.current.target
-  const unchanged = selected === effectiveTarget
-
-  useMountEffect(() => {
-    if (!user) return
-    let active = true
-    void getWeeklyGoalPlan(user.id).then((nextPlan) => {
-      if (!active) return
-      setPlan(nextPlan)
-      setSelected(nextPlan.next?.target ?? nextPlan.current.target)
-    }).catch(() => { if (active) setError("Could not load your weekly goal.") })
-    return () => { active = false }
-  })
-
-  async function saveGoal() {
-    if (!user) return
-    setSaving(true)
-    setSaved(false)
-    setError("")
-    try {
-      const next = await scheduleWeeklyGoal(user.id, selected)
-      setPlan((current) => current ? { ...current, next } : current)
-      setSaved(true)
-    } catch {
-      setError("Could not save your goal. Try again.")
-    } finally {
-      setSaving(false)
-    }
-  }
-
-  return (
-    <main className="settings-shell">
-      <div className="settings-page">
-        <header><BrandMark href="/home" /><Link to="/home"><ArrowLeft aria-hidden="true" /> Back home</Link></header>
-        <section className="settings-card" aria-labelledby="weekly-goal-title">
-          <Flame aria-hidden="true" />
-          <span>Weekly commitment</span>
-          <h1 id="weekly-goal-title">Choose your standard.</h1>
-          <p>Set the number of sessions you want to complete each week.</p>
-          <div className="goal-options" role="radiogroup" aria-label="Sessions per week">
-            {weeklyGoalOptions.map((option) => (
-              <button key={option.target} type="button" role="radio" aria-checked={selected === option.target} className={selected === option.target ? "is-selected" : ""} onClick={() => { setSelected(option.target); setSaved(false) }}>
-                <i aria-hidden="true" /><strong>{option.tier}{plan?.current.target === option.target && <em>This week</em>}{plan?.next?.target === option.target && <em>Next week</em>}</strong><span>{option.target}x per week</span>
-              </button>
-            ))}
+  const currentName = user?.user_metadata?.full_name ?? user?.user_metadata?.name ?? ""
+  const [name, setName] = useState<string>(currentName)
+  const save = useMutation({ mutationFn: updateDisplayName })
+  return <main className="settings-shell">
+    <div className="settings-page">
+      <header><NapkinIdentity href="/home" /><Link to="/home"><ArrowLeft aria-hidden="true" /> Back home</Link></header>
+      <section className="settings-card account-settings" aria-labelledby="settings-title">
+        <h1 id="settings-title">Your account.</h1>
+        <p>A few details. Back to practice.</p>
+        <form onSubmit={event => { event.preventDefault(); if (name.trim()) save.mutate(name.trim()) }}>
+          <label htmlFor="display-name">Name</label>
+          <input id="display-name" autoComplete="name" maxLength={80} required value={name} disabled={save.isPending} onChange={event => { setName(event.target.value); save.reset() }} />
+          <div className="account-sign-in">
+            <span className="account-provider"><GoogleIcon /> Signed in with Google</span>
+            <p>{user?.email}</p>
           </div>
-          <p className="goal-policy">New goals start next Monday. Current and previous weeks never change.</p>
-          {error && <p className="auth-error" role="alert">{error}</p>}
-          <Button size="lg" type="button" onClick={saveGoal} disabled={!plan || saving || unchanged}>{saving ? "Saving..." : saved ? "Scheduled" : "Schedule"}</Button>
-        </section>
-      </div>
-    </main>
-  )
+          <Button type="submit" disabled={save.isPending || !name.trim() || name.trim() === currentName}>{save.isPending ? "Saving…" : "Save changes"}</Button>
+          {save.isError && <p role="alert">Could not save your name. Please try again.</p>}
+          {save.isSuccess && <p role="status">Saved.</p>}
+        </form>
+      </section>
+    </div>
+  </main>
 }

@@ -14,6 +14,7 @@ vi.mock("@/features/training/executive-preferences-api", () => preferencesMock)
 const authMock = vi.hoisted(() => ({
   signInWithGoogle: vi.fn(),
   signOut: vi.fn(),
+  updateDisplayName: vi.fn().mockResolvedValue(undefined),
   status: "authenticated" as "authenticated" | "unauthenticated",
 }))
 
@@ -31,6 +32,7 @@ const trainingMock = vi.hoisted(() => ({
 vi.mock("@/features/auth/auth-store", () => ({
   signInWithGoogle: authMock.signInWithGoogle,
   signOut: authMock.signOut,
+  updateDisplayName: authMock.updateDisplayName,
   useAuth: () => ({
     status: authMock.status,
     user: authMock.status === "authenticated" ? { id: "user-1", email: "athlete@example.com", user_metadata: { full_name: "Napkin Athlete" } } : null,
@@ -79,21 +81,22 @@ describe("Napkin V1 flow", () => {
   it("starts with All and stores the complete session focus", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
-    expect(await screen.findByRole("button", { name: "Executive focus: All tracks" })).toBeTruthy()
+    expect(await screen.findByRole("button", { name: "All topics" })).toBeTruthy()
     await user.click(screen.getByRole("button", { name: /start training/i }))
     await screen.findByRole("textbox", { name: "Your answer" })
     expect(getStarterQuestions).toHaveBeenCalledWith(allTracks, "user-1")
     expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, allTracks)
   })
 
-  it("saves multiple tracks when the menu closes and carries them into practice", async () => {
+  it("applies multiple topics and carries them into practice", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
-    await user.click(await screen.findByRole("button", { name: /^Executive focus:/i }))
-    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Technology Officer" }))
-    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Marketing Officer" }))
-    await user.keyboard("{Escape}")
-    expect(screen.getByRole("button", { name: "Executive focus: CMO + CTO" })).toBeTruthy()
+    await user.click(await screen.findByRole("button", { name: "Show more" }))
+    await user.click(screen.getByRole("button", { name: "All topics" }))
+    await user.click(screen.getByRole("button", { name: "Technology" }))
+    await waitFor(() => expect(screen.getByRole("button", {name:"Marketing"}).hasAttribute("disabled")).toBe(false))
+    await user.click(screen.getByRole("button", { name: "Marketing" }))
+    expect(screen.getByRole("button", { name: "Marketing" }).getAttribute("aria-pressed")).toBe("true")
     expect(preferencesMock.savePreferredTracks).toHaveBeenCalledWith("user-1", ["cmo", "cto"])
     expect(localStorage.getItem("napkin:executive-focus:user-1")).toBeNull()
     await user.click(screen.getByRole("button", { name: /start training/i }))
@@ -105,27 +108,26 @@ describe("Napkin V1 flow", () => {
   it("Quick start uses All without changing the saved CFO preference", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
-    await user.click(await screen.findByRole("button", { name: /^Executive focus:/i }))
-    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Financial Officer" }))
-    await user.keyboard("{Escape}")
+    await user.click(await screen.findByRole("button", { name: "Show more" }))
+    await user.click(screen.getByRole("button", { name: "All topics" }))
+    await user.click(screen.getByRole("button", { name: "Finance" }))
     await user.click(screen.getByRole("button", { name: /quick start/i }))
     await screen.findByRole("textbox", { name: "Your answer" })
     expect(trainingMock.startPracticeSession).toHaveBeenCalledWith("user-1", 10, allTracks)
     expect(preferencesMock.savePreferredTracks).toHaveBeenCalledExactlyOnceWith("user-1", ["cfo"])
   })
 
-  it("supports keyboard selection and returns to All when the final track is removed", async () => {
+  it("expands and collapses extra topics by keyboard without saving", async () => {
     const user = userEvent.setup()
     renderRoute("/home")
-    const trigger = await screen.findByRole("button", { name: /^Executive focus:/i })
-    trigger.focus()
-    await user.keyboard("{Enter}{ArrowDown}{Enter}")
-    await user.keyboard("{Escape}")
-    expect(screen.getByRole("button", { name: "Executive focus: CEO" })).toBeTruthy()
-    await user.click(screen.getByRole("button", { name: /^Executive focus:/i }))
-    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Executive Officer" }))
-    await user.keyboard("{Escape}")
-    expect(screen.getByRole("button", { name: "Executive focus: All tracks" })).toBeTruthy()
+    const more = await screen.findByRole("button", {name:"Show more"})
+    more.focus()
+    await user.keyboard("{Enter}")
+    expect(screen.getByRole("button", {name:"Risk"})).toBeTruthy()
+    screen.getByRole("button", {name:"Show less"}).focus()
+    await user.keyboard("{Enter}")
+    expect(screen.queryByRole("button", {name:"Risk"})).toBeNull()
+    expect(preferencesMock.savePreferredTracks).not.toHaveBeenCalled()
   })
 
   it("does not create a session when the eligible pool is empty", async () => {
@@ -138,7 +140,7 @@ describe("Napkin V1 flow", () => {
   it("restores a saved preference without writing it back", async () => {
     preferencesMock.getPreferredTracks.mockResolvedValue(["cfo"])
     renderRoute("/home")
-    expect(await screen.findByRole("button", { name: "Executive focus: CFO" })).toBeTruthy()
+    expect(await screen.findByRole("button", { name: "Finance" })).toBeTruthy()
     expect(preferencesMock.savePreferredTracks).not.toHaveBeenCalled()
   })
 
@@ -198,13 +200,12 @@ describe("Napkin V1 flow", () => {
     preferencesMock.savePreferredTracks.mockRejectedValueOnce(new Error("offline"))
     const user = userEvent.setup()
     renderRoute("/home")
-    await user.click(await screen.findByRole("button", { name: "Executive focus: All tracks" }))
-    await user.click(screen.getByRole("menuitemcheckbox", { name: "Chief Financial Officer" }))
-    expect(preferencesMock.savePreferredTracks).not.toHaveBeenCalled()
-    await user.keyboard("{Escape}")
+    await user.click(await screen.findByRole("button", { name: "Show more" }))
+    await user.click(screen.getByRole("button", { name: "All topics" }))
+    await user.click(screen.getByRole("button", { name: "Finance" }))
     await user.click(await screen.findByRole("button", { name: "Retry saving" }))
     await waitFor(() => expect(screen.queryByRole("button", { name: "Retry saving" })).toBeNull())
-    expect(screen.getByRole("button", { name: "Executive focus: CFO" })).toBeTruthy()
+    expect(screen.getByRole("button", { name: "Finance" })).toBeTruthy()
     expect(preferencesMock.savePreferredTracks).toHaveBeenCalledTimes(2)
   })
 
@@ -216,7 +217,7 @@ describe("Napkin V1 flow", () => {
     expect(screen.getByRole("button", { name: /start training/i }).hasAttribute("disabled")).toBe(true)
     preferencesMock.getPreferredTracks.mockResolvedValue(["cfo"])
     await user.click(retry)
-    expect(await screen.findByRole("button", { name: "Executive focus: CFO" })).toBeTruthy()
+    expect(await screen.findByRole("button", { name: "Finance" })).toBeTruthy()
     expect(screen.getByRole("button", { name: /start training/i }).hasAttribute("disabled")).toBe(false)
   })
 
@@ -384,21 +385,23 @@ describe("Napkin V1 flow", () => {
     expect(authMock.signOut).toHaveBeenCalledOnce()
   })
 
-  it("schedules a new weekly goal from settings", async () => {
+  it("saves a display name without changing training goals", async () => {
     const user = userEvent.setup()
     renderRoute("/settings")
-
-    await user.click(await screen.findByRole("radio", { name: /pro.*5x/i }))
-    await user.click(screen.getByRole("button", { name: "Schedule" }))
-
-    expect(trainingMock.scheduleWeeklyGoal).toHaveBeenCalledWith("user-1", 5)
-    expect(await screen.findByText("Next week")).toBeTruthy()
+    await user.clear(await screen.findByLabelText("Name"))
+    await user.type(screen.getByLabelText("Name"), "New name")
+    await user.click(screen.getByRole("button", { name: "Save changes" }))
+    expect(authMock.updateDisplayName).toHaveBeenCalledWith("New name", expect.anything())
+    expect(await screen.findByRole("status")).toBeTruthy()
+    expect(trainingMock.scheduleWeeklyGoal).not.toHaveBeenCalled()
   })
 
-  it("does not reschedule the current weekly goal", async () => {
+  it("keeps unchanged profile details read only until edited", async () => {
     renderRoute("/settings")
-
-    expect(await screen.findByText("This week")).toBeTruthy()
-    expect(screen.getByRole("button", { name: "Schedule" }).hasAttribute("disabled")).toBe(true)
+    expect((await screen.findByRole("button", { name: "Save changes" })).hasAttribute("disabled")).toBe(true)
+    expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull()
+    expect(screen.getByText("Signed in with Google")).toBeTruthy()
+    expect(screen.getByText("athlete@example.com")).toBeTruthy()
+    expect(screen.queryByRole("radiogroup")).toBeNull()
   })
 })

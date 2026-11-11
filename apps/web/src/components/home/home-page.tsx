@@ -1,12 +1,12 @@
 import { useState } from "react"
 import { ArrowRight, CheckCircle2, ChevronRight, Clock3, Flame, Gauge, Layers3, Target, Trophy } from "lucide-react"
-import { BrandMark } from "@/components/brand/brand-mark"
+import { NapkinIdentity } from "@/components/brand/napkin-identity"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { WeekdayProgress } from "@/components/ui/weekday-progress"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useLocation, useNavigate } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { signOut, useAuth } from "@/features/auth/auth-store"
 import { getPracticeSessionResult, getSessionHistory, getTrainingSummary, type PracticeSessionResult, type TrainingSessionHistory } from "@/features/training/training-api"
 import { emptyTrainingSummary } from "@/features/training/training-metrics"
@@ -81,13 +81,13 @@ export function HomePage() {
     <main className="home-shell">
       <div className="home-content">
         <div className="home-brand">
-          <BrandMark href="/home" />
+          <NapkinIdentity href="/home" />
           <div className="home-account-actions">
             {isSummaryLoading ? <div className="home-streak" aria-busy="true"><Flame aria-hidden="true" /><Skeleton className="skeleton-streak" /><span className="sr-only">Loading weekly streak</span></div> : <div className="home-streak" aria-label={`${summary.streak} week streak`}><Flame aria-hidden="true" /><strong>{summary.streak} week streak</strong></div>}
             <DropdownMenu modal={false}>
               <div className="home-account">
                 <DropdownMenuTrigger asChild><button className="home-user" type="button" aria-label="Open account menu">{initials}</button></DropdownMenuTrigger>
-                <DropdownMenuContent align="end"><strong>{fullName}</strong><span>{user?.email}</span><DropdownMenuItem asChild><button type="button" onClick={() => navigate("/settings")}>Settings</button></DropdownMenuItem><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
+                <DropdownMenuContent align="end"><div className="account-heading"><strong>{fullName}</strong>{!isSummaryLoading && <span className="account-tier">{summary.weeklyGoal === 1 ? "1 day per week" : tierForTarget(summary.weeklyGoal)}</span>}</div><span>{user?.email}</span><DropdownMenuItem asChild><Link to="/settings">Settings</Link></DropdownMenuItem><DropdownMenuItem asChild><button type="button" onClick={logOut}>Log out</button></DropdownMenuItem></DropdownMenuContent>
               </div>
             </DropdownMenu>
           </div>
@@ -103,7 +103,7 @@ export function HomePage() {
               <span>This week</span>
               {isSummaryLoading ? <WeeklyGoalSkeleton /> : (
                 <div className="weekly-goal" aria-label={`${summary.weeklyProgress} of ${summary.weeklyGoal} active days this week`}>
-                  <div className="weekly-goal-summary"><div className="weekly-goal-tier"><Trophy aria-hidden="true" /><b>{tierForTarget(summary.weeklyGoal)}</b></div><strong>{Math.min(summary.weeklyProgress, summary.weeklyGoal)}/{summary.weeklyGoal}</strong>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
+                  <div className="weekly-goal-summary"><div className="weekly-goal-tier"><Trophy aria-hidden="true" /><b>{tierForTarget(summary.weeklyGoal)}</b></div>{summary.nextWeeklyGoal && <small className="weekly-next-goal">Next week: {summary.nextWeeklyGoal}x {tierForTarget(summary.nextWeeklyGoal)}</small>}</div>
                   <WeekdayProgress completedDays={summary.weeklySessionDays ?? emptyTrainingSummary.weeklySessionDays} currentDay={summary.currentWeekday ?? emptyTrainingSummary.currentWeekday} />
                 </div>
               )}
@@ -132,11 +132,12 @@ export function HomePage() {
             {duration.isSaving && <p className="focus-save-status" role="status">Saving duration…</p>}
             {duration.saveFailed && <p className="focus-save-status" role="alert">Could not save your duration. <button type="button" onClick={duration.save}>Retry saving duration</button></p>}
             {duration.loadFailed && !duration.saveFailed && <p className="focus-save-status" role="alert">Could not load your saved duration. <button type="button" onClick={duration.reload}>Retry loading duration</button></p>}
-            <ExecutiveFocus tracks={focus.tracks} onChange={focus.choose} onClose={focus.save} disabled={!focus.isReady || focus.isSaving} loading={!focus.isReady} />
-            {focus.isSaving && <p className="focus-save-status" role="status">Saving focus…</p>}
+            <ExecutiveFocus tracks={focus.tracks} onChange={focus.persist} disabled={!focus.isReady || focus.isSaving} loading={!focus.isReady} />
+            {focus.isReady && !focus.tracks.length && <p className="focus-save-status" role="status">Choose at least one topic to start training.</p>}
+            {focus.isSaving && <p className="sr-only" role="status">Saving focus…</p>}
             {focus.saveFailed && <p className="focus-save-status" role="alert">Could not save your focus. <button type="button" onClick={focus.save}>Retry saving</button></p>}
             {focus.loadFailed && !focus.saveFailed && <p className="focus-save-status" role="alert">Could not load your saved focus. <button type="button" onClick={focus.reload}>Retry loading</button></p>}
-            <Button className="home-start" size="lg" type="button" disabled={!focus.isReady || !duration.isReady || !duration.valid} onClick={() => startTraining(selectedDuration)}>
+            <Button className="home-start" size="lg" type="button" disabled={!focus.isReady || !focus.tracks.length || !duration.isReady || !duration.valid} onClick={() => startTraining(selectedDuration)}>
               Start training <ArrowRight aria-hidden="true" />
             </Button>
           </section>
@@ -219,7 +220,7 @@ function WeeklyGoalSkeleton() {
   return (
     <div className="weekly-goal weekly-goal-loading" aria-busy="true">
       <span className="sr-only">Loading weekly progress</span>
-      <div className="weekly-goal-summary"><Skeleton className="skeleton-tier" /><Skeleton className="skeleton-total" /><Skeleton className="skeleton-next" /></div>
+      <div className="weekly-goal-summary"><Skeleton className="skeleton-tier" /><Skeleton className="skeleton-next" /></div>
       <div className="weekday-progress">{Array.from({ length: 7 }, (_, index) => <Skeleton className="skeleton-day" key={index} />)}</div>
     </div>
   )
