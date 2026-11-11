@@ -563,3 +563,13 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .account-settings input + label { margin-top: 12px; }
 .account-settings form p { margin: 0; color: var(--ink); font-size: 14px; }
 .account-settings form button { justify-self: start; margin-top: 12px; }
+
+.account-heading { display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 10px; width: 100%; }
+.account-tier { font-size: 13px; font-weight: 650; color: var(--ink); }
+.account-menu > span { margin-bottom: 12px; }
+.account-menu > [role="menuitem"] { display: flex; align-items: center; width: 100%; min-height: 40px; padding: 0 10px; font-size: 16px; border-radius: 7px; }
+.account-menu > [role="menuitem"]:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.account-sign-in { display: grid; gap: 8px; margin-top: 12px; }
+.account-provider { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 650; }
+.account-provider svg { width: 20px; height: 20px; flex-shrink: 0; }
+.account-sign-in p { overflow-wrap: anywhere; }

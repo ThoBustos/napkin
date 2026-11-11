@@ -399,7 +399,9 @@ describe("Napkin V1 flow", () => {
   it("keeps unchanged profile details read only until edited", async () => {
     renderRoute("/settings")
     expect((await screen.findByRole("button", { name: "Save changes" })).hasAttribute("disabled")).toBe(true)
-    expect(screen.getByLabelText("Email").hasAttribute("readonly")).toBe(true)
+    expect(screen.queryByRole("textbox", { name: "Email" })).toBeNull()
+    expect(screen.getByText("Signed in with Google")).toBeTruthy()
+    expect(screen.getByText("athlete@example.com")).toBeTruthy()
     expect(screen.queryByRole("radiogroup")).toBeNull()
   })
 })
