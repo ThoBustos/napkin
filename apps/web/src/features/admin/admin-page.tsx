@@ -2,6 +2,7 @@ import { useReducer } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { Link, useSearchParams } from "react-router-dom"
 import { ArrowLeft, ArrowUpRight, Search } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { NapkinIdentity } from "@/components/brand/napkin-identity"
 import { useAuth } from "@/features/auth/auth-store"
 import { useAdminAccess } from "@/hooks/use-admin-access"
@@ -139,7 +140,7 @@ export function AdminPage() {
           </p>
           {!user && <Link to="/login">Sign in</Link>}
           {access.isError && (
-            <button onClick={() => void access.refetch()}>Try again</button>
+            <Button variant="ghost" onClick={() => void access.refetch()}>Try again</Button>
           )}
         </section>
       ) : (
@@ -307,7 +308,7 @@ export function AdminPage() {
                     dispatch({ type: "draft", value: e.target.value })
                   }
                 />
-                <button type="submit">Search</button>
+                <Button variant="ghost" size="sm" type="submit">Search</Button>
               </form>
               {users.isError ? (
                 <ErrorPanel
@@ -354,22 +355,22 @@ export function AdminPage() {
                   <div className="admin-pagination">
                     <span>Page {state.page + 1} · All-time activity</span>
                     <div>
-                      <button
+                      <Button variant="ghost" size="sm"
                         disabled={state.page === 0}
                         onClick={() =>
                           dispatch({ type: "page", value: state.page - 1 })
                         }
                       >
                         Previous
-                      </button>
-                      <button
+                      </Button>
+                      <Button variant="ghost" size="sm"
                         disabled={(state.page + 1) * 25 >= users.data.total}
                         onClick={() =>
                           dispatch({ type: "page", value: state.page + 1 })
                         }
                       >
                         Next
-                      </button>
+                      </Button>
                     </div>
                   </div>
                 </>
@@ -391,7 +392,7 @@ function ErrorPanel({
   return (
     <div role="alert">
       <p>{message}</p>
-      <button onClick={retry}>Try again</button>
+      <Button variant="ghost" onClick={retry}>Try again</Button>
     </div>
   )
 }
