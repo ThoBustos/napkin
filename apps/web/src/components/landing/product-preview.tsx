@@ -51,7 +51,7 @@ export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewP
       <aside className="preview-session">
         <p className="ui-label">Session</p>
         <h2>{question.topic}</h2>
-        <div className="progress-track"><span style={{ width: `${((questionIndex + 1) / questions.length) * 100}%` }} /></div>
+        <div className="progress-track" data-step={questionIndex + 1}><span /></div>
         <div className="preview-stats">
           <div><strong>{questionIndex + 1}</strong><span>Question</span></div>
           <div><strong>{solved}</strong><span>Solved</span></div>

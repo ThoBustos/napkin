@@ -1,5 +1,5 @@
 import { LandingPage } from "@/components/landing/landing-page"
-import { BrowserRouter, Route, Routes } from "react-router-dom"
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom"
 import { usePageMetadata } from "@/hooks/use-page-metadata"
 import { lazy, Suspense, useState } from "react"
 import { QueryClientProvider } from "@tanstack/react-query"
@@ -16,7 +16,7 @@ const SettingsPage = lazy(() => import("@/components/settings/settings-page").th
 const RequireAuth = lazy(() => import("@/features/auth/require-auth").then((module) => ({ default: module.RequireAuth })))
 
 function NotFoundPage() {
-  usePageMetadata({ robots: "noindex, nofollow", title: "Page not found | Napkin" })
+
 
   return (
     <main className="not-found">
@@ -30,6 +30,9 @@ function NotFoundPage() {
 
 export function AppRoutes() {
   usePageAnalytics()
+  const { pathname } = useLocation()
+  const titles: Record<string, string> = { "/": "Napkin | Stay sharp. Do the math.", "/login": "Sign in | Napkin", "/home": "Practice | Napkin", "/practice": "Training | Napkin", "/settings": "Your account | Napkin", "/admin": "Admin | Napkin", "/auth/callback": "Signing in | Napkin" }
+  usePageMetadata({ title: titles[pathname] ?? "Page not found | Napkin", robots: pathname === "/" ? "index, follow" : "noindex, nofollow", canonical: pathname === "/" ? "https://napkin.academy/" : undefined })
   const [queryClient] = useState(createQueryClient)
 
   return (

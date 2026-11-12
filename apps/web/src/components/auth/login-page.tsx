@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { NapkinIdentity, NapkinSymbol } from "@/components/brand/napkin-identity"
-import paper from "@/components/brand/assets/napkin-paper.webp"
+import paper from "@/components/brand/assets/napkin-paper-1200.webp"
+import smallPaper from "@/components/brand/assets/napkin-paper-480.webp"
+import mediumPaper from "@/components/brand/assets/napkin-paper-800.webp"
 import { ArrowLeft } from "lucide-react"
 import "./login-page.css"
 import { Button } from "@/components/ui/button"
@@ -39,7 +41,7 @@ export function LoginPage() {
           {auth.status === "unconfigured" && <p className="auth-error" role="alert">Authentication is not configured for this deployment.</p>}
           {error && <p className="auth-error" role="alert">{error}</p>}
         </section>
-        <div className="login-paper" aria-hidden="true"><div className="login-paper-object"><img src={paper} width="2048" height="2048" alt="" draggable="false" /><NapkinSymbol className="login-paper-symbol" /></div></div>
+        <div className="login-paper" aria-hidden="true"><div className="login-paper-object"><img src={mediumPaper} srcSet={`${smallPaper} 480w, ${mediumPaper} 800w, ${paper} 1200w`} sizes="(max-width: 640px) 100vw, (max-width: 1100px) 60vw, 650px" fetchPriority="high" width="1200" height="1200" alt="" draggable="false" /><NapkinSymbol className="login-paper-symbol" /></div></div>
       </div>
     </main>
   )
