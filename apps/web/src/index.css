@@ -167,7 +167,7 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .preview-question { position: relative; min-width: 0; padding: 48px 70px 60px; }
 .preview-meta { display: flex; justify-content: space-between; align-items: center; }
 .preview-meta .ui-label { color: var(--cobalt); }
-.preview-time { display: flex; align-items: center; gap: 8px; color: var(--orange); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 18px; }
+.preview-time { display: flex; align-items: center; gap: 8px; color: #b83e24; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 18px; }
 .preview-time svg { width: 17px; }
 .preview-question h2 { max-width: 760px; margin: 67px 0 18px; font-family: var(--font-serif); font-size: clamp(1.75rem, 2vw, 2.25rem); line-height: 1.16; letter-spacing: -.03em; font-weight: 500; }
 .preview-question > p { margin: 0 0 55px; color: var(--muted); font-size: 15px; }
@@ -575,3 +575,7 @@ button.session-row:focus-visible { position: relative; outline: 2px solid var(--
 .account-provider { display: flex; align-items: center; gap: 9px; font-size: 14px; font-weight: 650; }
 .account-provider svg { width: 20px; height: 20px; flex-shrink: 0; }
 .account-sign-in p { overflow-wrap: anywhere; }
+
+.progress-track[data-step="1"] span { width: 33.333333%; }
+.progress-track[data-step="2"] span { width: 66.666667%; }
+.progress-track[data-step="3"] span { width: 100%; }

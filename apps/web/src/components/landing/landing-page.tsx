@@ -58,9 +58,16 @@ export function LandingPage() {
       <div id="product" className="preview-wrap">
         <ProductPreview />
       </div>
-      <div id="topics" className="sr-only">
-        Revenue, margins, growth, costs, pricing and unit economics.
-      </div>
+      <section id="topics" className="landing-topics" aria-labelledby="topics-title">
+        <h2 id="topics-title">Numbers for the decisions you make.</h2>
+        <p>Mental maths practice for executives and professionals. Build numerical intuition across product, marketing, technology and finance—one short session at a time.</p>
+        <div className="landing-examples">
+          <article><h3>Margins</h3><p>A product sells for $80 and costs $50. Its gross margin is 37.5%: $30 divided by $80.</p></article>
+          <article><h3>Growth</h3><p>Revenue grows from $100k to $120k. That’s 20% growth: the $20k increase divided by $100k.</p></article>
+          <article><h3>Unit economics</h3><p>A campaign costs $2,000 and brings 40 customers. Acquisition costs $50 per customer.</p></article>
+        </div>
+        <p>Choose your topics, practise with a timer, and review your answers. Start with the free three-question demo above.</p>
+      </section>
     </main>
   )
 }

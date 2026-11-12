@@ -2,10 +2,12 @@ import { useEffect, type RefObject } from "react"
 
 export function useNapkinLight(
   ref: RefObject<HTMLCanvasElement | null>,
-  source: string,
+  imageRef: RefObject<HTMLImageElement | null>,
 ) {
   useEffect(() => {
     const canvas = ref.current
+    const image = imageRef.current
+    if (!image) return
     const gl = canvas?.getContext("webgl", { alpha: false, antialias: false })
     if (!canvas || !gl) return
     const vertex = gl.createShader(gl.VERTEX_SHADER)!
@@ -91,6 +93,7 @@ export function useNapkinLight(
     const draw = (now: number) => {
       frame = 0
       const animate =
+        ready &&
         !reduced.matches &&
         visible &&
         !document.hidden &&
@@ -134,8 +137,7 @@ export function useNapkinLight(
     const leave = () => {
       target = 0
     }
-    const image = new Image()
-    image.onload = () => {
+    const uploadImage = () => {
       if (disposed) return
       gl.bindTexture(gl.TEXTURE_2D, texture)
       gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true)
@@ -144,7 +146,8 @@ export function useNapkinLight(
       canvas.dataset.ready = "true"
       resize()
     }
-    image.src = source
+    image.addEventListener("load", uploadImage)
+    if (image.complete && image.naturalWidth) uploadImage()
     const ro = new ResizeObserver(resize)
     ro.observe(canvas)
     const io = new IntersectionObserver(([entry]) => {
@@ -159,7 +162,7 @@ export function useNapkinLight(
     reduced.addEventListener("change", restart)
     return () => {
       disposed = true
-      image.onload = null
+      image.removeEventListener("load", uploadImage)
       cancelAnimationFrame(frame)
       ro.disconnect()
       io.disconnect()
@@ -175,5 +178,5 @@ export function useNapkinLight(
       gl.deleteShader(vertex)
       gl.deleteShader(fragment)
     }
-  }, [ref, source])
+  }, [ref, imageRef])
 }
