@@ -1,0 +1,42 @@
+/* The public demo uses the same answer flow without the session dashboard. */
+.landing-demo.product-preview {
+  display: block;
+  width: min(100%, 880px);
+  min-height: 0;
+  margin-inline: auto;
+  border-radius: 20px;
+  background: var(--paper);
+  box-shadow: 0 12px 40px rgb(16 28 53 / 4%);
+}
+.landing-demo .preview-question { padding: clamp(24px, 5vw, 56px); }
+.landing-demo .preview-meta { gap: 20px; flex-wrap: wrap; }
+.landing-demo .preview-meta .ui-label { font-size: 11px; letter-spacing: .08em; }
+.demo-question-count { font-size: 13px; color: var(--ink); font-variant-numeric: tabular-nums; }
+.landing-demo .preview-question h2 {
+  max-width: none;
+  margin: 32px 0;
+  font-size: clamp(26px, 3vw, 36px);
+  line-height: 1.24;
+  letter-spacing: -.025em;
+}
+.landing-demo .preview-question label { font-size: 13px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.landing-demo .preview-answer { height: 64px; border: 1px solid var(--line); border-radius: 10px; margin-bottom: 20px; }
+.landing-demo .preview-answer:focus-within { border-color: var(--cobalt); }
+.landing-demo .preview-answer.is-correct { border-color: #40734c; }
+.landing-demo .preview-answer.is-incorrect { border-color: #a43f29; }
+.landing-demo .preview-answer input { font-family: var(--font-sans); font-size: 26px; padding-inline: 18px; }
+.landing-demo .preview-answer input::placeholder { color: var(--ink); }
+.landing-demo .preview-answer span { font-size: 18px; padding-inline: 18px; }
+.landing-demo .answer-actions { align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+.landing-demo .answer-actions > button { min-height: 48px; border-radius: 10px; }
+.landing-demo .answer-feedback { flex: 1 1 200px; align-self: center; font-size: 14px; color: var(--ink); }
+.landing-demo .answer-feedback:empty { display: none; }
+.landing-demo .answer-feedback.incorrect { color: #a43f29; }
+.landing-demo .answer-feedback.correct { color: #40734c; }
+.landing-demo .preview-complete { min-height: 0; padding: clamp(24px, 5vw, 56px); }
+.landing-demo .preview-complete > p:not(.ui-label) { color: var(--ink); }
+.demo-complete-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+@media (max-width: 500px) {
+  .landing-demo .answer-actions > button { width: 100%; }
+  .landing-demo .answer-feedback { flex-basis: 100%; }
+}
