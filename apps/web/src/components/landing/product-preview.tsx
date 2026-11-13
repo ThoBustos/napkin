@@ -4,14 +4,16 @@ import { ArrowRight, Check, Clock3, Flame, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCountdown } from "@/hooks/use-countdown"
 import { previewQuestions as questions } from "./preview-data"
+import "./product-preview.css"
 
 type Result = "idle" | "correct" | "incorrect" | "complete"
 
 interface ProductPreviewProps {
+  compact?: boolean
   initialSeconds?: number
 }
 
-export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewProps) {
+export function ProductPreview({ compact = false, initialSeconds = 6 * 60 + 28 }: ProductPreviewProps) {
   const [questionIndex, setQuestionIndex] = useState(0)
   const [answer, setAnswer] = useState("")
   const [result, setResult] = useState<Result>("idle")
@@ -22,6 +24,8 @@ export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewP
 
   function checkAnswer(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
+    if (result === "correct") { nextQuestion(); return }
+    if (!answer.trim()) return
     const value = Number(answer.replace(",", "."))
     setResult(Number.isFinite(value) && Math.abs(value - question.answer) < 0.01 ? "correct" : "incorrect")
   }
@@ -47,8 +51,8 @@ export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewP
   }
 
   return (
-    <section className="product-preview" aria-label="Three-question Napkin exercise">
-      <aside className="preview-session">
+    <section className={`product-preview${compact ? " landing-demo" : ""}`} aria-label="Three-question Napkin exercise">
+      {!compact && <aside className="preview-session">
         <p className="ui-label">Session</p>
         <h2>{question.topic}</h2>
         <div className="progress-track" data-step={questionIndex + 1}><span /></div>
@@ -57,36 +61,36 @@ export function ProductPreview({ initialSeconds = 6 * 60 + 28 }: ProductPreviewP
           <div><strong>{solved}</strong><span>Solved</span></div>
         </div>
         <div className="preview-streak"><Flame aria-hidden="true" /><span><small>Streak</small><strong>{solved} in a row</strong></span></div>
-      </aside>
+      </aside>}
       {result === "complete" ? (
         <div className="preview-complete" role="status">
           <span className="complete-mark"><Check aria-hidden="true" /></span>
           <p className="ui-label">Session complete</p>
           <h2>Three out of three.</h2>
-          <p>You completed the full landing-page workout.</p>
-          <Button onClick={restart}>Try again <RotateCcw aria-hidden="true" /></Button>
+          <p>{compact ? "Keep your practice going." : "You completed the full landing-page workout."}</p>
+          <div className="demo-complete-actions">{compact && <Button asChild><a href="/login" onClick={() => track("landing_cta_clicked", { placement: "demo", action: "start_training" })}>Start training <ArrowRight aria-hidden="true" /></a></Button>}<Button variant={compact ? "ghost" : "default"} onClick={restart}>Try again <RotateCcw aria-hidden="true" /></Button></div>
         </div>
       ) : (
         <form className="preview-question" onSubmit={checkAnswer}>
           <div className="preview-meta">
             <span className="ui-label">{question.category}</span>
-            <span className="preview-time"><Clock3 aria-hidden="true" /> {clock}</span>
+            {compact ? <span className="demo-question-count">Question {questionIndex + 1} of {questions.length}</span> : <span className="preview-time"><Clock3 aria-hidden="true" /> {clock}</span>}
           </div>
           <h2>{question.prompt}</h2>
-          <p>{question.instruction}</p>
-          <label htmlFor="preview-answer">Your answer <span>in {question.unit}</span></label>
+          {!compact && <p>{question.instruction}</p>}
+          <label htmlFor="preview-answer">Your answer {!compact && <span>in {question.unit}</span>}</label>
           <div className={`preview-answer ${result === "incorrect" ? "is-incorrect" : result === "correct" ? "is-correct" : ""}`}>
-            <input ref={inputRef} id="preview-answer" value={answer} onChange={(event) => { setAnswer(event.target.value); setResult("idle") }} inputMode="decimal" autoComplete="off" placeholder="0" aria-describedby="answer-feedback" />
-            <span>{question.unit}</span>
+            <input ref={inputRef} id="preview-answer" value={answer} onChange={(event) => { setAnswer(event.target.value); setResult("idle") }} inputMode="decimal" autoComplete="off" placeholder="0" aria-describedby="answer-feedback answer-unit" aria-invalid={result === "incorrect"} />
+            <span id="answer-unit">{question.unit}</span>
           </div>
           <div className="answer-actions">
             {result === "correct" ? (
               <Button type="button" onClick={nextQuestion}>{questionIndex === questions.length - 1 ? "Complete session" : "Next question"} <ArrowRight aria-hidden="true" /></Button>
             ) : (
-              <Button type="submit" disabled={!answer}>Check answer <ArrowRight aria-hidden="true" /></Button>
+              <Button type="submit" disabled={!answer.trim()}>Check answer <ArrowRight aria-hidden="true" /></Button>
             )}
             <p id="answer-feedback" className={`answer-feedback ${result}`} role="status">
-              {result === "correct" ? `Correct. ${question.answer} ${question.unit}.` : result === "incorrect" ? question.error : "Press Enter to check."}
+              {result === "correct" ? `Correct. ${question.answer} ${question.unit}.` : result === "incorrect" ? question.error : compact ? "" : "Press Enter to check."}
             </p>
           </div>
         </form>
