@@ -1,4 +1,4 @@
-import { track } from "@/features/analytics/analytics"
+import { track, trackLandingCta } from "@/features/analytics/analytics"
 import { type FormEvent, useRef, useState } from "react"
 import { ArrowRight, Check, Clock3, Flame, RotateCcw } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -68,7 +68,7 @@ export function ProductPreview({ compact = false, initialSeconds = 6 * 60 + 28 }
           <p className="ui-label">Session complete</p>
           <h2>Three out of three.</h2>
           <p>{compact ? "Keep your practice going." : "You completed the full landing-page workout."}</p>
-          <div className="demo-complete-actions">{compact && <Button asChild><a href="/login" onClick={() => track("landing_cta_clicked", { placement: "demo", action: "start_training" })}>Start training <ArrowRight aria-hidden="true" /></a></Button>}<Button variant={compact ? "ghost" : "default"} onClick={restart}>Try again <RotateCcw aria-hidden="true" /></Button></div>
+          <div className="demo-complete-actions">{compact && <Button asChild><a href="/login" onClick={(event) => trackLandingCta(event, { placement: "demo", action: "start_training" })}>Start training <ArrowRight aria-hidden="true" /></a></Button>}<Button variant={compact ? "ghost" : "default"} onClick={restart}>Try again <RotateCcw aria-hidden="true" /></Button></div>
         </div>
       ) : (
         <form className="preview-question" onSubmit={checkAnswer}>
